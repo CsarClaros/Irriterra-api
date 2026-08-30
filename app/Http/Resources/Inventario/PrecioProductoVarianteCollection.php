@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Http\Resources\Inventario;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+
+class PrecioProductoVarianteCollection extends ResourceCollection
+{
+    /**
+     * Transforma la colección.
+     */
+    public function toArray(
+        Request $request
+    ): array {
+
+        return [
+
+            'data' =>
+                PrecioProductoVarianteResource::collection(
+
+                    $this->collection
+
+                )
+
+        ];
+    }
+}

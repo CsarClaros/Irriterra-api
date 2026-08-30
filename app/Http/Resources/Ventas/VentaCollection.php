@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Http\Resources\Ventas;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\ResourceCollection;
+
+class VentaCollection extends ResourceCollection
+{
+    /**
+     * Transforma la colección.
+     */
+    public function toArray(
+        Request $request
+    ): array {
+
+        return [
+
+            'data' =>
+                VentaResource::collection(
+
+                    $this->collection
+
+                )
+
+        ];
+    }
+}
