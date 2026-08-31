@@ -140,19 +140,15 @@ class RolPermisoSeeder extends Seeder
 
         ];
 
-
         /*
-        |--------------------------------------------------------------------------
-        | Gerente
-        |--------------------------------------------------------------------------
-        |
-        | Gestión general excepto:
-        |
-        | - compras
-        | - administración de roles
-        | - administración de permisos
-        |
-        */
+|--------------------------------------------------------------------------
+| Gerente
+|--------------------------------------------------------------------------
+|
+| Gestión operativa general.
+| No administra roles ni permisos estructurales.
+|
+*/
 
         $gerente = [
 

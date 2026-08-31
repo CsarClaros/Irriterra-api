@@ -20,29 +20,28 @@ class StoreProductoImagenRequest extends BaseRequest
 
                 'integer',
 
-                Rule::exists('producto', 'id_producto')
-                    ->where('estado_registro', 'A')
+                Rule::exists(
+                    'producto',
+                    'id_producto'
+                )
+                    ->where(
+                        'estado_registro',
+                        'A'
+                    )
 
             ],
 
-            'ruta_imagen' => [
+            'imagen' => [
 
                 'required',
 
-                'string',
+                'file',
 
-                'max:255',
+                'image',
 
-                Rule::unique(
-                    'producto_imagen',
-                    'ruta_imagen'
-                )
-                    ->where(
-                        fn ($query) => $query->where(
-                            'id_producto',
-                            $this->input('id_producto')
-                        )
-                    )
+                'mimes:jpg,jpeg,png,webp',
+
+                'max:5120'
 
             ],
 
@@ -97,6 +96,26 @@ class StoreProductoImagenRequest extends BaseRequest
                 'integer'
 
             ]
+
+        ];
+    }
+
+
+    public function messages(): array
+    {
+        return [
+
+            'imagen.required' =>
+                'Debe seleccionar una imagen.',
+
+            'imagen.image' =>
+                'El archivo seleccionado debe ser una imagen.',
+
+            'imagen.mimes' =>
+                'La imagen debe estar en formato JPG, JPEG, PNG o WEBP.',
+
+            'imagen.max' =>
+                'La imagen no puede superar los 5 MB.'
 
         ];
     }

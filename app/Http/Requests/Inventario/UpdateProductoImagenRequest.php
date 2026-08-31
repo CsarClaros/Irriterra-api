@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Inventario;
 
 use App\Http\Requests\BaseRequest;
-use App\Models\Inventario\ProductoImagen;
 use Illuminate\Validation\Rule;
 
 class UpdateProductoImagenRequest extends BaseRequest
@@ -13,21 +12,6 @@ class UpdateProductoImagenRequest extends BaseRequest
      */
     public function rules(): array
     {
-        $productoImagen = $this->route('productoImagen');
-
-        $idProductoImagen =
-            $productoImagen instanceof ProductoImagen
-                ? $productoImagen->id_producto_imagen
-                : $productoImagen;
-
-        $idProducto =
-            $this->input('id_producto')
-            ?? (
-                $productoImagen instanceof ProductoImagen
-                    ? $productoImagen->id_producto
-                    : null
-            );
-
         return [
 
             'id_producto' => [
@@ -38,35 +22,30 @@ class UpdateProductoImagenRequest extends BaseRequest
 
                 'integer',
 
-                Rule::exists('producto', 'id_producto')
-                    ->where('estado_registro', 'A')
+                Rule::exists(
+                    'producto',
+                    'id_producto'
+                )
+                    ->where(
+                        'estado_registro',
+                        'A'
+                    )
 
             ],
 
-            'ruta_imagen' => [
+            'imagen' => [
 
                 'sometimes',
 
-                'required',
+                'nullable',
 
-                'string',
+                'file',
 
-                'max:255',
+                'image',
 
-                Rule::unique(
-                    'producto_imagen',
-                    'ruta_imagen'
-                )
-                    ->where(
-                        fn ($query) => $query->where(
-                            'id_producto',
-                            $idProducto
-                        )
-                    )
-                    ->ignore(
-                        $idProductoImagen,
-                        'id_producto_imagen'
-                    )
+                'mimes:jpg,jpeg,png,webp',
+
+                'max:5120'
 
             ],
 
@@ -123,6 +102,23 @@ class UpdateProductoImagenRequest extends BaseRequest
                 'integer'
 
             ]
+
+        ];
+    }
+
+
+    public function messages(): array
+    {
+        return [
+
+            'imagen.image' =>
+                'El archivo seleccionado debe ser una imagen.',
+
+            'imagen.mimes' =>
+                'La imagen debe estar en formato JPG, JPEG, PNG o WEBP.',
+
+            'imagen.max' =>
+                'La imagen no puede superar los 5 MB.'
 
         ];
     }
