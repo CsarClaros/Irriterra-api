@@ -53,6 +53,7 @@ class Sucursal extends Model
 
         'latitud',
         'longitud',
+        'url_maps',
 
         'observaciones',
 
@@ -65,11 +66,23 @@ class Sucursal extends Model
      */
     protected $casts = [
 
-        'latitud' => 'decimal:7',
-        'longitud' => 'decimal:7',
+        'id_sucursal' =>
+            'integer',
 
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'id_empresa' =>
+            'integer',
+
+        'latitud' =>
+            'decimal:8',
+
+        'longitud' =>
+            'decimal:8',
+
+        'usuario_creacion' =>
+            'integer',
+
+        'usuario_modificacion' =>
+            'integer'
 
     ];
 
@@ -90,6 +103,7 @@ class Sucursal extends Model
             'id_empresa'
         );
     }
+
     /**
      * Registros de stock pertenecientes a la sucursal.
      */

@@ -28,7 +28,19 @@ class EmpresaResource extends BaseResource
 
             'sitio_web' => $this->sitio_web,
 
-            'logo' => $this->logo,
+            'logo' =>
+                $this->logo
+
+                    ? asset(
+                    'storage/'
+                    .
+                    ltrim(
+                        $this->logo,
+                        '/'
+                    )
+                )
+
+                    : null,
 
             'observaciones' => $this->observaciones,
 

@@ -365,6 +365,59 @@ class UsuarioService
 
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Restablecer contraseña
+|--------------------------------------------------------------------------
+*/
+
+    public function restablecerPassword(
+        Usuario $usuario
+    ): Usuario {
+
+        return DB::transaction(
+            function () use (
+                $usuario
+            ) {
+
+                return $this
+                    ->repository
+                    ->update(
+                        $usuario,
+                        [
+
+                            /*
+                             * La contraseña vuelve
+                             * al CI del usuario.
+                             */
+
+                            'password' =>
+                                Hash::make(
+                                    (string)
+                                    $usuario->ci
+                                ),
+
+
+                            /*
+                             * También recuperamos
+                             * el acceso si estaba
+                             * bloqueado.
+                             */
+
+                            'intentos_fallidos' =>
+                                0,
+
+                            'bloqueado_hasta' =>
+                                null
+
+                        ]
+                    );
+
+            }
+        );
+
+    }
+
     /**
      * Eliminación lógica.
      */

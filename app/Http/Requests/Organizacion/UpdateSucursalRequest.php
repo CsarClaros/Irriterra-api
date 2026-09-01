@@ -51,7 +51,14 @@ class UpdateSucursalRequest extends BaseRequest
                     'required',
                     'string',
                     'max:150'
-                ]
+                ],
+
+                'url_maps' => [
+                    'sometimes',
+                    'nullable',
+                    'url',
+                    'max:2000'
+                ],
 
             ],
 
@@ -61,9 +68,9 @@ class UpdateSucursalRequest extends BaseRequest
 
             $this->observacionRules(),
 
-            // $this->auditoriaRules(),
+        // $this->auditoriaRules(),
 
-            // $this->estadoRegistroRules()
+        // $this->estadoRegistroRules()
 
         );
     }

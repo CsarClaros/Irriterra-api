@@ -146,10 +146,172 @@ class ProductoImagenRepository
     ): bool
     {
 
-        return $productoImagen->update([
+        return $productoImagen
+            ->update([
 
-            'estado_registro' => 'I'
+                'estado_registro' =>
+                    'I',
 
-        ]);
+                'es_principal' =>
+                    false
+
+            ]);
+
     }
+
+    /*
+|--------------------------------------------------------------------------
+| Verificar orden ocupado
+|--------------------------------------------------------------------------
+*/
+
+    public function existeOrdenEnGaleria(
+        int  $idProducto,
+        ?int $idProductoVariante,
+        int  $orden,
+        ?int $exceptoId = null
+    ): bool
+    {
+
+        $query =
+            ProductoImagen::query()
+                ->where(
+                    'id_producto',
+                    $idProducto
+                )
+                ->where(
+                    'orden',
+                    $orden
+                )
+                ->where(
+                    'estado_registro',
+                    'A'
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Galería
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $idProductoVariante
+            === null
+        ) {
+
+            $query
+                ->whereNull(
+                    'id_producto_variante'
+                );
+
+        } else {
+
+            $query
+                ->where(
+                    'id_producto_variante',
+                    $idProductoVariante
+                );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Excluir imagen editada
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $exceptoId
+            !== null
+        ) {
+
+            $query
+                ->where(
+                    'id_producto_imagen',
+                    '<>',
+                    $exceptoId
+                );
+
+        }
+
+
+        return $query
+            ->exists();
+
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Asignar primera imagen como principal
+|--------------------------------------------------------------------------
+*/
+
+    public function asignarPrimeraComoPrincipal(
+        int  $idProducto,
+        ?int $idProductoVariante
+    ): ?ProductoImagen
+    {
+
+        $query =
+            ProductoImagen::query()
+                ->where(
+                    'id_producto',
+                    $idProducto
+                )
+                ->where(
+                    'estado_registro',
+                    'A'
+                );
+
+
+        if (
+            $idProductoVariante
+            === null
+        ) {
+
+            $query
+                ->whereNull(
+                    'id_producto_variante'
+                );
+
+        } else {
+
+            $query
+                ->where(
+                    'id_producto_variante',
+                    $idProductoVariante
+                );
+
+        }
+
+
+        $imagen =
+            $query
+                ->orderBy(
+                    'orden'
+                )
+                ->first();
+
+
+        if (
+            !$imagen
+        ) {
+
+            return null;
+
+        }
+
+
+        $imagen->update([
+            'es_principal' =>
+                true
+        ]);
+
+
+        return $imagen;
+
+    }
+
 }

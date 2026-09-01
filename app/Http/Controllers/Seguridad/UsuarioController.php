@@ -127,6 +127,32 @@ class UsuarioController extends Controller
         );
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Restablecer contraseña
+|--------------------------------------------------------------------------
+*/
+
+    public function restablecerPassword(
+        Usuario $usuario
+    ): JsonResponse
+    {
+
+        $this
+            ->service
+            ->restablecerPassword(
+                $usuario
+            );
+
+
+        return response()
+            ->json([
+                'message' =>
+                    'La contraseña fue restablecida correctamente.'
+            ]);
+
+    }
+
     /**
      * Eliminación lógica.
      */

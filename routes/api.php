@@ -35,6 +35,8 @@ use App\Http\Controllers\Reportes\ReporteTransferenciasController;
 use App\Http\Controllers\Reportes\ReporteVentasController;
 use App\Http\Controllers\Seguridad\AuthController;
 use App\Http\Controllers\Publico\CatalogoPublicoController;
+use App\Http\Controllers\Publico\EmpresaPublicaController;
+use App\Http\Controllers\Publico\SucursalPublicaController;
 
 
 /*
@@ -264,6 +266,24 @@ Route::middleware(
                 ->middleware(
                     'permiso:usuario.editar'
                 );
+
+            /*
+|--------------------------------------------------------------------------
+| Restablecer contraseña de usuario
+|--------------------------------------------------------------------------
+*/
+
+            Route::patch(
+                'usuario/{usuario}/restablecer-password',
+                [
+                    UsuarioController::class,
+                    'restablecerPassword'
+                ]
+            )
+                ->middleware([
+                    'permiso:usuario.crear',
+                    'permiso:usuario.editar'
+                ]);
 
             Route::apiResource(
                 'usuario',
@@ -939,5 +959,26 @@ Route::prefix(
                     'id'
                 );
 
+            /*
+|--------------------------------------------------------------------------
+| Empresa pública
+|--------------------------------------------------------------------------
+*/
+
+            Route::get(
+                'empresa',
+                [
+                    EmpresaPublicaController::class,
+                    'show'
+                ]
+            );
+
+            Route::get(
+                'sucursales',
+                [
+                    SucursalPublicaController::class,
+                    'index'
+                ]
+            );
         }
     );

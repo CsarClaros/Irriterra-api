@@ -7,6 +7,7 @@ use App\Repositories\Inventario\ProductoImagenRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use Illuminate\Validation\ValidationException;
 
 class ProductoImagenService
 {
@@ -66,6 +67,27 @@ class ProductoImagenService
             $data['imagen']
         );
 
+        $idProducto =
+            (int)
+            $data['id_producto'];
+
+
+        $idProductoVariante =
+            $data['id_producto_variante']
+            ?? null;
+
+
+        $orden =
+            (int)
+            $data['orden'];
+
+
+        $this
+            ->validarOrdenDisponible(
+                $idProducto,
+                $idProductoVariante,
+                $orden
+            );
 
         /*
         |--------------------------------------------------------------------------
@@ -195,6 +217,27 @@ class ProductoImagenService
         $rutaNueva =
             null;
 
+
+        $orden =
+            array_key_exists(
+                'orden',
+                $data
+            )
+
+                ? (int)
+            $data['orden']
+
+                : (int)
+            $productoImagen->orden;
+
+        $this
+            ->validarOrdenDisponible(
+                $idProducto,
+                $idProductoVariante,
+                $orden,
+                $productoImagen
+                    ->id_producto_imagen
+            );
 
         /*
         |--------------------------------------------------------------------------
@@ -362,27 +405,77 @@ class ProductoImagenService
      */
     public function destroy(
         ProductoImagen $productoImagen
-    ): bool
-    {
-
-        /*
-         * Se conserva el archivo físico
-         * porque la eliminación del ERP
-         * es lógica.
-         */
+    ): bool {
 
         return DB::transaction(
             function () use (
                 $productoImagen
             ) {
 
-                return $this->repository
-                    ->delete(
-                        $productoImagen
-                    );
+                /*
+                |--------------------------------------------------------------------------
+                | Datos antes de eliminar
+                |--------------------------------------------------------------------------
+                */
+
+                $eraPrincipal =
+                    (bool)
+                    $productoImagen
+                        ->es_principal;
+
+
+                $idProducto =
+                    (int)
+                    $productoImagen
+                        ->id_producto;
+
+
+                $idProductoVariante =
+                    $productoImagen
+                        ->id_producto_variante;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Eliminación lógica
+                |--------------------------------------------------------------------------
+                */
+
+                $eliminado =
+                    $this
+                        ->repository
+                        ->delete(
+                            $productoImagen
+                        );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Reasignar principal
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $eliminado
+                    &&
+                    $eraPrincipal
+                ) {
+
+                    $this
+                        ->repository
+                        ->asignarPrimeraComoPrincipal(
+                            $idProducto,
+                            $idProductoVariante
+                        );
+
+                }
+
+
+                return $eliminado;
 
             }
         );
+
     }
 
     /**
@@ -412,5 +505,44 @@ class ProductoImagenService
 
 
         return $directorio;
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Validar orden disponible
+|--------------------------------------------------------------------------
+*/
+
+    private function validarOrdenDisponible(
+        int  $idProducto,
+        ?int $idProductoVariante,
+        int  $orden,
+        ?int $exceptoId = null
+    ): void
+    {
+
+        $ocupado =
+            $this
+                ->repository
+                ->existeOrdenEnGaleria(
+                    $idProducto,
+                    $idProductoVariante,
+                    $orden,
+                    $exceptoId
+                );
+
+
+        if (
+            $ocupado
+        ) {
+
+            throw ValidationException::withMessages([
+                'orden' => [
+                    'El orden seleccionado ya está ocupado en esta galería.'
+                ]
+            ]);
+
+        }
+
     }
 }

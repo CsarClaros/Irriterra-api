@@ -43,9 +43,11 @@ class StoreEmpresaRequest extends BaseRequest
 
                 'logo' => [
                     'nullable',
-                    'string',
-                    'max:255'
-                ]
+                    'file',
+                    'image',
+                    'mimes:jpg,jpeg,png,webp',
+                    'max:5120'
+                ],
 
             ],
 

@@ -40,7 +40,13 @@ class StoreSucursalRequest extends BaseRequest
                     'required',
                     'string',
                     'max:150'
-                ]
+                ],
+
+                'url_maps' => [
+                    'nullable',
+                    'url',
+                    'max:2000'
+                ],
 
             ],
 

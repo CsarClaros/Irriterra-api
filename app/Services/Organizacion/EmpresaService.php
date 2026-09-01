@@ -7,6 +7,9 @@ use App\Repositories\Organizacion\EmpresaRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class EmpresaService
 {
@@ -65,20 +68,147 @@ class EmpresaService
     /**
      * Actualizar empresa.
      */
-    public function update(Empresa $empresa, array $data): Empresa
-    {
-        return DB::transaction(function () use ($empresa, $data) {
+    public function update(
+        Empresa $empresa,
+        array $data
+    ): Empresa {
 
-            $empresa = $this->empresaRepository->update($empresa, $data);
+        $rutaLogoAnterior =
+            $empresa->logo;
+
+
+        $rutaLogoNueva =
+            null;
+
+
+        try {
+
+            $empresaActualizada =
+                DB::transaction(
+                    function () use (
+                        $empresa,
+                        $data,
+                        &$rutaLogoNueva
+                    ) {
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Nuevo logo
+                        |--------------------------------------------------------------------------
+                        */
+
+                        if (
+                            isset(
+                                $data['logo']
+                            )
+                            &&
+                            $data['logo']
+                            instanceof UploadedFile
+                        ) {
+
+                            $rutaLogoNueva =
+                                $data['logo']
+                                    ->store(
+                                        'empresa',
+                                        'public'
+                                    );
+
+
+                            $data['logo'] =
+                                $rutaLogoNueva;
+
+                        } else {
+
+                            /*
+                             * Si no se recibió un archivo,
+                             * conservar logo existente.
+                             */
+
+                            unset(
+                                $data['logo']
+                            );
+
+                        }
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Actualizar
+                        |--------------------------------------------------------------------------
+                        */
+
+                        return $this
+                            ->empresaRepository
+                            ->update(
+                                $empresa,
+                                $data
+                            );
+
+                    }
+                );
+
 
             /*
             |--------------------------------------------------------------------------
-            | Auditoría (Futuro)
+            | Eliminar logo anterior
             |--------------------------------------------------------------------------
+            |
+            | Se hace después de que la
+            | actualización de BD terminó
+            | correctamente.
+            |
             */
 
-            return $empresa;
-        });
+            if (
+                $rutaLogoNueva
+                &&
+                $rutaLogoAnterior
+                &&
+                str_starts_with(
+                    $rutaLogoAnterior,
+                    'empresa/'
+                )
+            ) {
+
+                Storage::disk(
+                    'public'
+                )
+                    ->delete(
+                        $rutaLogoAnterior
+                    );
+
+            }
+
+
+            return $empresaActualizada;
+
+        } catch (
+        Throwable $exception
+        ) {
+
+            /*
+             * La BD falló:
+             * eliminar nuevo archivo.
+             */
+
+            if (
+                $rutaLogoNueva
+            ) {
+
+                Storage::disk(
+                    'public'
+                )
+                    ->delete(
+                        $rutaLogoNueva
+                    );
+
+            }
+
+
+            throw $exception;
+
+        }
+
     }
 
     /**
@@ -100,4 +230,102 @@ class EmpresaService
             return $this->empresaRepository->delete($empresa);
         });
     }
+
+    public function store(
+        array $data
+    ): Empresa {
+
+        $rutaLogoNueva =
+            null;
+
+
+        try {
+
+            return DB::transaction(
+                function () use (
+                    $data,
+                    &$rutaLogoNueva
+                ) {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Logo
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        isset(
+                            $data['logo']
+                        )
+                        &&
+                        $data['logo']
+                        instanceof UploadedFile
+                    ) {
+
+                        $rutaLogoNueva =
+                            $data['logo']
+                                ->store(
+                                    'empresa',
+                                    'public'
+                                );
+
+
+                        $data['logo'] =
+                            $rutaLogoNueva;
+
+                    } else {
+
+                        unset(
+                            $data['logo']
+                        );
+
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Registrar empresa
+                    |--------------------------------------------------------------------------
+                    */
+
+                    return $this
+                        ->repository
+                        ->create(
+                            $data
+                        );
+
+                }
+            );
+
+        } catch (
+        Throwable $exception
+        ) {
+
+            /*
+             * Si la BD falla después
+             * de almacenar el archivo,
+             * eliminamos el archivo nuevo.
+             */
+
+            if (
+                $rutaLogoNueva
+            ) {
+
+                Storage::disk(
+                    'public'
+                )
+                    ->delete(
+                        $rutaLogoNueva
+                    );
+
+            }
+
+
+            throw $exception;
+
+        }
+
+    }
+
+
 }

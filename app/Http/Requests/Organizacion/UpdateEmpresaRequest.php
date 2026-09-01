@@ -53,10 +53,13 @@ class UpdateEmpresaRequest extends BaseRequest
                 ],
 
                 'logo' => [
+                    'sometimes',
                     'nullable',
-                    'string',
-                    'max:255'
-                ]
+                    'file',
+                    'image',
+                    'mimes:jpg,jpeg,png,webp',
+                    'max:5120'
+                ],
 
             ],
 

@@ -36,6 +36,9 @@ class SucursalResource extends BaseResource
 
             'longitud' => $this->longitud,
 
+            'url_maps' =>
+                $this->url_maps,
+
             'observaciones' => $this->observaciones,
 
             'estado_registro' => $this->estado_registro,
