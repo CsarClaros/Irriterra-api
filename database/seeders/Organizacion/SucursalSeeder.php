@@ -21,11 +21,11 @@ class SucursalSeeder extends Seeder
 
         Sucursal::updateOrCreate(
 
-            /*
-            |--------------------------------------------------------------------------
-            | Registro de búsqueda
-            |--------------------------------------------------------------------------
-            */
+        /*
+        |--------------------------------------------------------------------------
+        | Registro de búsqueda
+        |--------------------------------------------------------------------------
+        */
 
             [
                 'codigo' => 'SC-001'
@@ -39,27 +39,29 @@ class SucursalSeeder extends Seeder
 
             [
 
-                'id_empresa'        => $empresa->id_empresa,
+                'id_empresa' => $empresa->id_empresa,
 
-                'nombre'            => 'Casa Matriz',
+                'nombre' => 'Casa Matriz',
 
-                'departamento'      => 'La Paz',
+                'departamento' => 'La Paz',
 
-                'ciudad'            => 'La Paz',
+                'ciudad' => 'La Paz',
 
-                'direccion'         => 'Pendiente de actualizar',
+                'direccion' => 'Pendiente de actualizar',
 
-                'telefono'          => null,
+                'telefono' => null,
 
-                'correo'            => null,
+                'correo' => null,
 
-                'latitud'           => null,
+                'url_maps' =>
+                    null,
 
-                'longitud'          => null,
+                'url_maps_embed' =>
+                    null,
 
-                'observaciones'     => 'Sucursal principal del ERP.',
+                'observaciones' => 'Sucursal principal del ERP.',
 
-                'estado_registro'   => 'A'
+                'estado_registro' => 'A'
 
             ]
 

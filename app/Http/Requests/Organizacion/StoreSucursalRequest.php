@@ -7,6 +7,7 @@ use App\Http\Requests\Traits\AuditoriaRules;
 use App\Http\Requests\Traits\ContactoRules;
 use App\Http\Requests\Traits\EstadoRegistroRules;
 use App\Http\Requests\Traits\UbicacionRules;
+use App\Http\Requests\Traits\GoogleMapsRules;
 
 class StoreSucursalRequest extends BaseRequest
 {
@@ -14,6 +15,7 @@ class StoreSucursalRequest extends BaseRequest
     use UbicacionRules;
     use EstadoRegistroRules;
     use AuditoriaRules;
+    use GoogleMapsRules;
 
     /**
      * Reglas para registrar una sucursal.
@@ -48,16 +50,52 @@ class StoreSucursalRequest extends BaseRequest
                     'max:2000'
                 ],
 
+                'url_maps_embed' =>
+                    $this->reglasMapsEmbed(),
+
             ],
 
             $this->ubicacionRules(),
 
             $this->contactoRules(),
 
-            // $this->auditoriaRules(),
+        // $this->auditoriaRules(),
 
-            // $this->estadoRegistroRules()
+        // $this->estadoRegistroRules()
 
         );
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Preparar datos
+|--------------------------------------------------------------------------
+*/
+
+    protected function prepareForValidation():
+    void
+    {
+
+        if (
+            $this->has(
+                'url_maps_embed'
+            )
+        ) {
+
+            $this->merge([
+
+                'url_maps_embed' =>
+                    $this->normalizarMapsEmbed(
+
+                        $this->input(
+                            'url_maps_embed'
+                        )
+
+                    )
+
+            ]);
+
+        }
+
     }
 }

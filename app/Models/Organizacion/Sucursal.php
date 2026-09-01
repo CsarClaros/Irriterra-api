@@ -51,9 +51,8 @@ class Sucursal extends Model
         'telefono',
         'correo',
 
-        'latitud',
-        'longitud',
         'url_maps',
+        'url_maps_embed',
 
         'observaciones',
 
@@ -71,12 +70,6 @@ class Sucursal extends Model
 
         'id_empresa' =>
             'integer',
-
-        'latitud' =>
-            'decimal:8',
-
-        'longitud' =>
-            'decimal:8',
 
         'usuario_creacion' =>
             'integer',

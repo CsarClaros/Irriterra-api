@@ -32,9 +32,11 @@ class SucursalResource extends BaseResource
 
             'correo' => $this->correo,
 
-            'latitud' => $this->latitud,
+            'url_maps' =>
+                $this->url_maps,
 
-            'longitud' => $this->longitud,
+            'url_maps_embed' =>
+                $this->url_maps_embed,
 
             'url_maps' =>
                 $this->url_maps,

@@ -9,6 +9,7 @@ use App\Http\Requests\Traits\EstadoRegistroRules;
 use App\Http\Requests\Traits\UbicacionRules;
 use App\Http\Requests\Traits\ObservacionRules;
 use Illuminate\Validation\Rule;
+use App\Http\Requests\Traits\GoogleMapsRules;
 
 class UpdateSucursalRequest extends BaseRequest
 {
@@ -17,6 +18,7 @@ class UpdateSucursalRequest extends BaseRequest
     use EstadoRegistroRules;
     use AuditoriaRules;
     use ObservacionRules;
+    use GoogleMapsRules;
 
     /**
      * Reglas para actualizar una sucursal.
@@ -60,6 +62,14 @@ class UpdateSucursalRequest extends BaseRequest
                     'max:2000'
                 ],
 
+                'url_maps_embed' =>
+                    array_merge(
+                        [
+                            'sometimes'
+                        ],
+                        $this->reglasMapsEmbed()
+                    ),
+
             ],
 
             $this->ubicacionRules(),
@@ -73,5 +83,32 @@ class UpdateSucursalRequest extends BaseRequest
         // $this->estadoRegistroRules()
 
         );
+    }
+
+    protected function prepareForValidation():
+    void
+    {
+
+        if (
+            $this->has(
+                'url_maps_embed'
+            )
+        ) {
+
+            $this->merge([
+
+                'url_maps_embed' =>
+                    $this->normalizarMapsEmbed(
+
+                        $this->input(
+                            'url_maps_embed'
+                        )
+
+                    )
+
+            ]);
+
+        }
+
     }
 }

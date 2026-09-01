@@ -29,15 +29,6 @@ trait UbicacionRules
                 'max:255'
             ],
 
-            'latitud' => [
-                'nullable',
-                'numeric'
-            ],
-
-            'longitud' => [
-                'nullable',
-                'numeric'
-            ]
 
         ];
     }

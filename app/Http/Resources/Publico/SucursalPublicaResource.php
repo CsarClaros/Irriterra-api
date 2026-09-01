@@ -41,19 +41,11 @@ class SucursalPublicaResource
             'correo' =>
                 $this->correo,
 
-            'latitud' =>
-                $this->latitud !== null
-                    ? (float)$this->latitud
-                    : null,
-
-            'longitud' =>
-                $this->longitud !== null
-                    ? (float)$this->longitud
-                    : null,
-
             'url_maps' =>
-                $this->url_maps
+                $this->url_maps,
 
+            'url_maps_embed' =>
+                $this->url_maps_embed
         ];
 
     }
