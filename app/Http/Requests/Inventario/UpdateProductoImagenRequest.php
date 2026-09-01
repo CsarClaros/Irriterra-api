@@ -33,6 +33,38 @@ class UpdateProductoImagenRequest extends BaseRequest
 
             ],
 
+            'id_producto_variante' => [
+
+                'sometimes',
+
+                'nullable',
+
+                'integer',
+
+                Rule::exists(
+                    'producto_variante',
+                    'id_producto_variante'
+                )
+                    ->where(
+                        function ($query) use (
+                            $idProducto
+                        ) {
+
+                            $query
+                                ->where(
+                                    'id_producto',
+                                    $idProducto
+                                )
+                                ->where(
+                                    'estado_registro',
+                                    'A'
+                                );
+
+                        }
+                    )
+
+            ],
+
             'imagen' => [
 
                 'sometimes',

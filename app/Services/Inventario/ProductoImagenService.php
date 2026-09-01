@@ -73,11 +73,20 @@ class ProductoImagenService
         |--------------------------------------------------------------------------
         */
 
+        $directorio =
+            $this->construirDirectorio(
+
+                $data['id_producto'],
+
+                $data['id_producto_variante']
+                ?? null
+
+            );
+
         $ruta =
             $archivo->store(
 
-                'productos/'
-                . $data['id_producto'],
+                $directorio,
 
                 'public'
 
@@ -114,7 +123,9 @@ class ProductoImagenService
                         $this->repository
                             ->desmarcarPrincipal(
 
-                                $data['id_producto']
+                                $data['id_producto'],
+
+                                $data['id_producto_variante'] ?? null
 
                             );
 
@@ -165,6 +176,16 @@ class ProductoImagenService
             $productoImagen
                 ->id_producto;
 
+        $idProductoVariante =
+            array_key_exists(
+                'id_producto_variante',
+                $data
+            )
+
+                ? $data['id_producto_variante']
+
+                : $productoImagen
+                ->id_producto_variante;
 
         $rutaAnterior =
             $productoImagen
@@ -196,11 +217,20 @@ class ProductoImagenService
             );
 
 
+            $directorio =
+                $this->construirDirectorio(
+
+                    $idProducto,
+
+                    $idProductoVariante
+
+                );
+
+
             $rutaNueva =
                 $archivo->store(
 
-                    'productos/'
-                    . $idProducto,
+                    $directorio,
 
                     'public'
 
@@ -220,7 +250,8 @@ class ProductoImagenService
                     function () use (
                         $productoImagen,
                         $data,
-                        $idProducto
+                        $idProducto,
+                        $idProductoVariante
                     ) {
 
                         $esPrincipal =
@@ -246,6 +277,8 @@ class ProductoImagenService
 
                                     $idProducto,
 
+                                    $idProductoVariante,
+
                                     $productoImagen
                                         ->id_producto_imagen
 
@@ -267,12 +300,6 @@ class ProductoImagenService
                 );
 
         } catch (Throwable $exception) {
-
-            /*
-             * Si almacenamos una nueva
-             * imagen pero falla la BD,
-             * eliminamos la nueva.
-             */
 
             if (
                 $rutaNueva !== null
@@ -356,5 +383,34 @@ class ProductoImagenService
 
             }
         );
+    }
+
+    /**
+     * Construye el directorio donde
+     * se almacenará la imagen.
+     */
+    private function construirDirectorio(
+        int  $idProducto,
+        ?int $idProductoVariante = null
+    ): string
+    {
+
+        $directorio =
+            'productos/'
+            . $idProducto;
+
+
+        if (
+            $idProductoVariante !== null
+        ) {
+
+            $directorio .=
+                '/variantes/'
+                . $idProductoVariante;
+
+        }
+
+
+        return $directorio;
     }
 }

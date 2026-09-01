@@ -54,8 +54,9 @@ class ProductoImagenRepository
      */
     public function update(
         ProductoImagen $productoImagen,
-        array $data
-    ): ProductoImagen {
+        array          $data
+    ): ProductoImagen
+    {
 
         $productoImagen->update($data);
 
@@ -70,17 +71,55 @@ class ProductoImagenRepository
      * Desmarca las imágenes principales de un producto.
      */
     public function desmarcarPrincipal(
-        int $idProducto,
+        int  $idProducto,
+        ?int $idProductoVariante = null,
         ?int $exceptoId = null
-    ): int {
+    ): int
+    {
 
-        $query = ProductoImagen::where(
-            'id_producto',
-            $idProducto
-        )
-            ->where('es_principal', true);
+        $query =
+            ProductoImagen::where(
+                'id_producto',
+                $idProducto
+            )
+                ->where(
+                    'estado_registro',
+                    'A'
+                );
 
-        if ($exceptoId !== null) {
+
+        /*
+         * Galería general o galería
+         * específica de variante.
+         */
+
+        if (
+            $idProductoVariante === null
+        ) {
+
+            $query->whereNull(
+                'id_producto_variante'
+            );
+
+        } else {
+
+            $query->where(
+                'id_producto_variante',
+                $idProductoVariante
+            );
+
+        }
+
+
+        $query->where(
+            'es_principal',
+            true
+        );
+
+
+        if (
+            $exceptoId !== null
+        ) {
 
             $query->where(
                 'id_producto_imagen',
@@ -90,9 +129,11 @@ class ProductoImagenRepository
 
         }
 
+
         return $query->update([
 
-            'es_principal' => false
+            'es_principal' =>
+                false
 
         ]);
     }
@@ -102,7 +143,8 @@ class ProductoImagenRepository
      */
     public function delete(
         ProductoImagen $productoImagen
-    ): bool {
+    ): bool
+    {
 
         return $productoImagen->update([
 

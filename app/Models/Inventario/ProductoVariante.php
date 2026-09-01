@@ -180,4 +180,30 @@ class ProductoVariante extends Model
 
         );
     }
+
+    /**
+     * Imágenes específicas de la variante.
+     */
+    public function imagenes(): HasMany
+    {
+        return $this->hasMany(
+
+            ProductoImagen::class,
+
+            'id_producto_variante',
+
+            'id_producto_variante'
+
+        )
+            ->where(
+                'estado_registro',
+                'A'
+            )
+            ->orderByDesc(
+                'es_principal'
+            )
+            ->orderBy(
+                'orden'
+            );
+    }
 }

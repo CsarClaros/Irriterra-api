@@ -37,6 +37,8 @@ class ProductoImagen extends Model
 
         'id_producto',
 
+        'id_producto_variante',
+
         'ruta_imagen',
 
         'texto_alternativo',
@@ -63,6 +65,9 @@ class ProductoImagen extends Model
         'id_producto_imagen' => 'integer',
 
         'id_producto' => 'integer',
+
+        'id_producto_variante' =>
+            'integer',
 
         'orden' => 'integer',
 
@@ -92,6 +97,23 @@ class ProductoImagen extends Model
             'id_producto',
 
             'id_producto'
+
+        );
+    }
+
+    /**
+     * Variante específica a la que
+     * pertenece la imagen.
+     */
+    public function variante(): BelongsTo
+    {
+        return $this->belongsTo(
+
+            ProductoVariante::class,
+
+            'id_producto_variante',
+
+            'id_producto_variante'
 
         );
     }

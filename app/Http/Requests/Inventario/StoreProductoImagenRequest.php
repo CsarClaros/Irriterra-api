@@ -31,6 +31,36 @@ class StoreProductoImagenRequest extends BaseRequest
 
             ],
 
+            'id_producto_variante' => [
+
+                'nullable',
+
+                'integer',
+
+                Rule::exists(
+                    'producto_variante',
+                    'id_producto_variante'
+                )
+                    ->where(
+                        function ($query) {
+
+                            $query
+                                ->where(
+                                    'id_producto',
+                                    $this->input(
+                                        'id_producto'
+                                    )
+                                )
+                                ->where(
+                                    'estado_registro',
+                                    'A'
+                                );
+
+                        }
+                    )
+
+            ],
+
             'imagen' => [
 
                 'required',

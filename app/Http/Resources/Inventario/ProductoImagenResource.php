@@ -20,6 +20,9 @@ class ProductoImagenResource extends JsonResource
 
             'id_producto' => $this->id_producto,
 
+            'id_producto_variante' =>
+                $this->id_producto_variante,
+
             'ruta_imagen' =>
                 $this->resolverRutaImagen(
                     $this->ruta_imagen
