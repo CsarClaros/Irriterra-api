@@ -10,97 +10,191 @@ use App\Http\Resources\Inventario\CategoriaResource;
 use App\Models\Inventario\Categoria;
 use App\Services\Inventario\CategoriaService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
-class CategoriaController extends Controller
+
+class CategoriaController
+    extends Controller
 {
-    /**
-     * Constructor.
-     */
+
     public function __construct(
         private readonly CategoriaService $service
-    ) {
+    )
+    {
     }
 
-    /**
-     * Lista categorías activas.
-     */
-    public function index(): CategoriaCollection
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(
+        Request $request
+    ): CategoriaCollection
     {
+
+        $incluirInactivas =
+            $request->boolean(
+                'incluir_inactivas'
+            );
+
+
         return new CategoriaCollection(
 
-            $this->service->index()
+            $this->service
+                ->index(
+                    $incluirInactivas
+                )
 
         );
+
     }
 
-    /**
-     * Registra una categoría.
-     */
-    public function store(StoreCategoriaRequest $request): JsonResponse
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
+    public function store(
+        StoreCategoriaRequest $request
+    ): JsonResponse
     {
-        $categoria = $this->service->store(
 
-            $request->validated()
+        $categoria =
+            $this->service
+                ->store(
+                    $request->validated()
+                );
 
-        );
 
         return response()->json(
 
-            new CategoriaResource($categoria),
+            new CategoriaResource(
+                $categoria
+            ),
 
             201
 
         );
+
     }
 
-    /**
-     * Muestra una categoría.
-     */
-    public function show(Categoria $categoria): CategoriaResource
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mostrar
+    |--------------------------------------------------------------------------
+    */
+
+    public function show(
+        Categoria $categoria
+    ): CategoriaResource
     {
+
         return new CategoriaResource(
 
-            $this->service->show($categoria->id_categoria)
+            $this->service
+                ->show(
+                    $categoria
+                        ->id_categoria
+                )
 
         );
+
     }
 
-    /**
-     * Actualiza una categoría.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         UpdateCategoriaRequest $request,
-        Categoria $categoria
-    ): JsonResponse {
+        Categoria              $categoria
+    ): JsonResponse
+    {
 
-        $categoria = $this->service->update(
+        $categoria =
+            $this->service
+                ->update(
 
-            $categoria,
+                    $categoria,
 
-            $request->validated()
+                    $request->validated()
 
-        );
+                );
+
 
         return response()->json(
 
-            new CategoriaResource($categoria),
+            new CategoriaResource(
+                $categoria
+            ),
 
             200
 
         );
+
     }
 
-    /**
-     * Eliminación lógica.
-     */
-    public function destroy(Categoria $categoria): JsonResponse
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function destroy(
+        Categoria $categoria
+    ): JsonResponse
     {
-        $this->service->destroy($categoria);
+
+        $this->service
+            ->destroy(
+                $categoria
+            );
+
 
         return response()->json([
 
-            'message' => 'Categoría eliminada correctamente.'
+            'message' =>
+                'Categoría desactivada correctamente.'
 
         ], 200);
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Categoria $categoria
+    ): JsonResponse
+    {
+
+        $this->service
+            ->reactivate(
+                $categoria
+            );
+
+
+        return response()->json([
+
+            'message' =>
+                'Categoría reactivada correctamente.'
+
+        ], 200);
+
+    }
+
 }

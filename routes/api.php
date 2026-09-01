@@ -306,10 +306,29 @@ Route::middleware(
                     'permiso:usuario.eliminar'
                 );
 
+
+            /*
+|--------------------------------------------------------------------------
+| Reactivar categoría
+|--------------------------------------------------------------------------
+*/
+
+            Route::patch(
+                'categoria/{categoria}/reactivar',
+                [
+                    CategoriaController::class,
+                    'reactivate'
+                ]
+            )
+                ->middleware(
+                    'permiso:categoria.editar'
+                );
             /*
              *
              * Inventario
              */
+
+
             Route::apiResource(
                 'categoria',
                 CategoriaController::class
