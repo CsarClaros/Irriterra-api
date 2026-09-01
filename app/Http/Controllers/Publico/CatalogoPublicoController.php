@@ -19,11 +19,11 @@ class CatalogoPublicoController
 
     public function __construct(
 
-        private readonly
-        CatalogoPublicoService
-        $catalogoPublicoService
+        private readonly CatalogoPublicoService $catalogoPublicoService
 
-    ) {}
+    )
+    {
+    }
 
 
     /*
@@ -33,14 +33,43 @@ class CatalogoPublicoController
     */
 
     public function index():
-    JsonResponse {
+    JsonResponse
+    {
 
         return response()
             ->json([
+
                 'data' =>
                     $this
                         ->catalogoPublicoService
                         ->obtenerCatalogo()
+
+            ]);
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Producto
+    |--------------------------------------------------------------------------
+    */
+
+    public function show(
+        int $id
+    ): JsonResponse
+    {
+
+        return response()
+            ->json([
+
+                'data' =>
+                    $this
+                        ->catalogoPublicoService
+                        ->obtenerProducto(
+                            $id
+                        )
+
             ]);
 
     }

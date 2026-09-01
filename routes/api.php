@@ -899,11 +899,45 @@ Route::middleware(
 | Catálogo público
 |--------------------------------------------------------------------------
 */
-Route::get(
-    'public/catalogo',
-    [
-        CatalogoPublicoController::class,
-        'index'
-    ]
-);
+/*
+|--------------------------------------------------------------------------
+| Catálogo público
+|--------------------------------------------------------------------------
+*/
 
+Route::prefix(
+    'public'
+)
+    ->group(
+        function (): void {
+
+            /*
+             * Catálogo general.
+             */
+
+            Route::get(
+                'catalogo',
+                [
+                    CatalogoPublicoController::class,
+                    'index'
+                ]
+            );
+
+
+            /*
+             * Detalle de producto.
+             */
+
+            Route::get(
+                'productos/{id}',
+                [
+                    CatalogoPublicoController::class,
+                    'show'
+                ]
+            )
+                ->whereNumber(
+                    'id'
+                );
+
+        }
+    );
