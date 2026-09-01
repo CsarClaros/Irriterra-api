@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Inventario;
 
 use App\Http\Requests\BaseRequest;
+use App\Models\Inventario\ProductoImagen;
 use Illuminate\Validation\Rule;
 
 class UpdateProductoImagenRequest extends BaseRequest
@@ -12,7 +13,74 @@ class UpdateProductoImagenRequest extends BaseRequest
      */
     public function rules(): array
     {
+        /*
+        |--------------------------------------------------------------------------
+        | Imagen actual
+        |--------------------------------------------------------------------------
+        */
+
+        $productoImagen =
+            $this->route(
+                'productoImagen'
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | ID imagen
+        |--------------------------------------------------------------------------
+        */
+
+        $idProductoImagen =
+
+            $productoImagen
+            instanceof ProductoImagen
+
+                ? $productoImagen
+                ->id_producto_imagen
+
+                : $productoImagen;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Producto efectivo
+        |--------------------------------------------------------------------------
+        |
+        | Si el frontend envía id_producto,
+        | utilizamos ese valor.
+        |
+        | Si no lo envía, utilizamos el producto
+        | de la imagen actualmente registrada.
+        |
+        */
+
+        $idProducto =
+
+            $this->input(
+                'id_producto'
+            )
+
+            ?? (
+
+        $productoImagen
+        instanceof ProductoImagen
+
+            ? $productoImagen
+            ->id_producto
+
+            : null
+
+        );
+
+
         return [
+
+            /*
+            |--------------------------------------------------------------------------
+            | Producto
+            |--------------------------------------------------------------------------
+            */
 
             'id_producto' => [
 
@@ -33,6 +101,13 @@ class UpdateProductoImagenRequest extends BaseRequest
 
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Variante
+            |--------------------------------------------------------------------------
+            */
+
             'id_producto_variante' => [
 
                 'sometimes',
@@ -46,7 +121,9 @@ class UpdateProductoImagenRequest extends BaseRequest
                     'id_producto_variante'
                 )
                     ->where(
-                        function ($query) use (
+                        function (
+                            $query
+                        ) use (
                             $idProducto
                         ) {
 
@@ -65,6 +142,13 @@ class UpdateProductoImagenRequest extends BaseRequest
 
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Archivo
+            |--------------------------------------------------------------------------
+            */
+
             'imagen' => [
 
                 'sometimes',
@@ -81,6 +165,13 @@ class UpdateProductoImagenRequest extends BaseRequest
 
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Texto alternativo
+            |--------------------------------------------------------------------------
+            */
+
             'texto_alternativo' => [
 
                 'sometimes',
@@ -92,6 +183,13 @@ class UpdateProductoImagenRequest extends BaseRequest
                 'max:255'
 
             ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Orden
+            |--------------------------------------------------------------------------
+            */
 
             'orden' => [
 
@@ -105,6 +203,13 @@ class UpdateProductoImagenRequest extends BaseRequest
 
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Principal
+            |--------------------------------------------------------------------------
+            */
+
             'es_principal' => [
 
                 'sometimes',
@@ -115,6 +220,13 @@ class UpdateProductoImagenRequest extends BaseRequest
 
             ],
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Observaciones
+            |--------------------------------------------------------------------------
+            */
+
             'observaciones' => [
 
                 'sometimes',
@@ -124,6 +236,13 @@ class UpdateProductoImagenRequest extends BaseRequest
                 'string'
 
             ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Auditoría
+            |--------------------------------------------------------------------------
+            */
 
             'usuario_modificacion' => [
 
@@ -139,6 +258,9 @@ class UpdateProductoImagenRequest extends BaseRequest
     }
 
 
+    /**
+     * Mensajes personalizados.
+     */
     public function messages(): array
     {
         return [
@@ -150,7 +272,10 @@ class UpdateProductoImagenRequest extends BaseRequest
                 'La imagen debe estar en formato JPG, JPEG, PNG o WEBP.',
 
             'imagen.max' =>
-                'La imagen no puede superar los 5 MB.'
+                'La imagen no puede superar los 5 MB.',
+
+            'id_producto_variante.exists' =>
+                'La variante seleccionada no pertenece al producto o no está activa.'
 
         ];
     }
