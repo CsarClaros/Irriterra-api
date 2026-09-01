@@ -684,6 +684,25 @@ Route::middleware(
             /*
              * Compras
              */
+
+            /*
+            |----------------------------------------------------------
+            | Reactivar proveedor
+            |----------------------------------------------------------
+            */
+
+            Route::patch(
+                'proveedor/{proveedor}/reactivar',
+                [
+                    ProveedorController::class,
+                    'reactivate'
+                ]
+            )
+                ->middleware(
+                    'permiso:proveedor.editar'
+                );
+
+
             Route::apiResource(
                 'proveedor',
                 ProveedorController::class

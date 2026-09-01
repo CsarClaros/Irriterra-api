@@ -5,86 +5,171 @@ namespace App\Repositories\Compras;
 use App\Models\Compras\Proveedor;
 use Illuminate\Database\Eloquent\Collection;
 
+
 class ProveedorRepository
 {
-    /**
-     * Obtiene todos los proveedores activos.
-     */
-    public function getAll(): Collection
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function getAll(
+        bool $incluirInactivos = false
+    ): Collection
     {
-        return Proveedor::where(
-            'estado_registro',
-            'A'
-        )
+
+        $query =
+            Proveedor::query();
+
+
+        if (
+            !$incluirInactivos
+        ) {
+
+            $query->where(
+                'estado_registro',
+                'A'
+            );
+
+        }
+
+
+        return $query
+            ->orderByRaw(
+                "CASE
+                    WHEN estado_registro = 'A'
+                    THEN 0
+                    ELSE 1
+                END"
+            )
             ->orderBy(
                 'nombre_razon_social'
             )
             ->get();
+
     }
 
-    /**
-     * Busca un proveedor activo por ID.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Buscar por ID
+    |--------------------------------------------------------------------------
+    */
+
     public function findById(
         int $id
-    ): Proveedor {
+    ): Proveedor
+    {
 
-        return Proveedor::where(
-            'estado_registro',
-            'A'
-        )
-            ->findOrFail($id);
+        return Proveedor::findOrFail(
+            $id
+        );
+
     }
 
-    /**
-     * Busca y bloquea un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Buscar y bloquear
+    |--------------------------------------------------------------------------
+    */
+
     public function findByIdForUpdate(
         int $id
-    ): Proveedor {
+    ): Proveedor
+    {
 
-        return Proveedor::where(
-            'estado_registro',
-            'A'
-        )
+        return Proveedor::query()
             ->lockForUpdate()
-            ->findOrFail($id);
+            ->findOrFail(
+                $id
+            );
+
     }
 
-    /**
-     * Registra un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
     public function create(
         array $data
-    ): Proveedor {
+    ): Proveedor
+    {
 
-        return Proveedor::create($data);
+        return Proveedor::create(
+            $data
+        );
+
     }
 
-    /**
-     * Actualiza un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         Proveedor $proveedor,
-        array $data
-    ): Proveedor {
+        array     $data
+    ): Proveedor
+    {
 
-        $proveedor->update($data);
+        $proveedor->update(
+            $data
+        );
 
-        return $proveedor->fresh();
+
+        return $proveedor
+            ->fresh();
+
     }
 
-    /**
-     * Realiza la eliminación lógica.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
     public function delete(
         Proveedor $proveedor
-    ): bool {
+    ): bool
+    {
 
         return $proveedor->update([
 
-            'estado_registro' => 'I'
+            'estado_registro' =>
+                'I'
 
         ]);
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Proveedor $proveedor
+    ): bool
+    {
+
+        return $proveedor->update([
+
+            'estado_registro' =>
+                'A'
+
+        ]);
+
+    }
+
 }

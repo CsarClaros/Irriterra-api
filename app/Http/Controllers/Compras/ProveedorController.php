@@ -10,42 +10,66 @@ use App\Http\Resources\Compras\ProveedorResource;
 use App\Models\Compras\Proveedor;
 use App\Services\Compras\ProveedorService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
-class ProveedorController extends Controller
+
+class ProveedorController
+    extends Controller
 {
-    /**
-     * Constructor.
-     */
+
     public function __construct(
         private readonly ProveedorService $service
-    ) {
+    )
+    {
     }
 
-    /**
-     * Lista proveedores activos.
-     */
-    public function index(): ProveedorCollection
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(
+        Request $request
+    ): ProveedorCollection
     {
+
+        $incluirInactivos =
+            $request->boolean(
+                'incluir_inactivos'
+            );
+
+
         return new ProveedorCollection(
 
-            $this->service->index()
+            $this->service
+                ->index(
+                    $incluirInactivos
+                )
 
         );
+
     }
 
-    /**
-     * Registra un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
     public function store(
         StoreProveedorRequest $request
-    ): JsonResponse {
+    ): JsonResponse
+    {
 
         $proveedor =
-            $this->service->store(
+            $this->service
+                ->store(
+                    $request->validated()
+                );
 
-                $request->validated()
-
-            );
 
         return response()->json(
 
@@ -56,42 +80,56 @@ class ProveedorController extends Controller
             201
 
         );
+
     }
 
-    /**
-     * Muestra un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mostrar
+    |--------------------------------------------------------------------------
+    */
+
     public function show(
         Proveedor $proveedor
-    ): ProveedorResource {
+    ): ProveedorResource
+    {
 
         return new ProveedorResource(
 
-            $this->service->show(
-
-                $proveedor->id_proveedor
-
-            )
+            $this->service
+                ->show(
+                    $proveedor
+                        ->id_proveedor
+                )
 
         );
+
     }
 
-    /**
-     * Actualiza un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         UpdateProveedorRequest $request,
-        Proveedor $proveedor
-    ): JsonResponse {
+        Proveedor              $proveedor
+    ): JsonResponse
+    {
 
         $proveedor =
-            $this->service->update(
+            $this->service
+                ->update(
 
-                $proveedor,
+                    $proveedor,
 
-                $request->validated()
+                    $request->validated()
 
-            );
+                );
+
 
         return response()->json(
 
@@ -102,24 +140,61 @@ class ProveedorController extends Controller
             200
 
         );
+
     }
 
-    /**
-     * Elimina lógicamente un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
     public function destroy(
         Proveedor $proveedor
-    ): JsonResponse {
+    ): JsonResponse
+    {
 
-        $this->service->destroy(
-            $proveedor
-        );
+        $this->service
+            ->destroy(
+                $proveedor
+            );
+
 
         return response()->json([
 
             'message' =>
-                'Proveedor eliminado correctamente.'
+                'Proveedor desactivado correctamente.'
 
         ], 200);
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Proveedor $proveedor
+    ): JsonResponse
+    {
+
+        $this->service
+            ->reactivate(
+                $proveedor
+            );
+
+
+        return response()->json([
+
+            'message' =>
+                'Proveedor reactivado correctamente.'
+
+        ], 200);
+
+    }
+
 }

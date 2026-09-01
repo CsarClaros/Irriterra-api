@@ -7,67 +7,103 @@ use App\Repositories\Compras\ProveedorRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+
 class ProveedorService
 {
-    /**
-     * Constructor.
-     */
+
     public function __construct(
         private readonly ProveedorRepository $repository
-    ) {
-    }
-
-    /**
-     * Lista proveedores activos.
-     */
-    public function index(): Collection
+    )
     {
-        return $this->repository->getAll();
     }
 
-    /**
-     * Muestra un proveedor activo.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(
+        bool $incluirInactivos = false
+    ): Collection
+    {
+
+        return $this->repository
+            ->getAll(
+                $incluirInactivos
+            );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mostrar
+    |--------------------------------------------------------------------------
+    */
+
     public function show(
         int $id
-    ): Proveedor {
+    ): Proveedor
+    {
 
-        return $this->repository->findById(
-            $id
-        );
+        return $this->repository
+            ->findById(
+                $id
+            );
+
     }
 
-    /**
-     * Registra un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
     public function store(
         array $data
-    ): Proveedor {
+    ): Proveedor
+    {
 
         return DB::transaction(
-            function () use ($data) {
+            function () use (
+                $data
+            ) {
 
                 $data['tipo_proveedor'] =
                     $data['tipo_proveedor']
-                    ?? Proveedor::EMPRESA;
+                    ??
+                    Proveedor::EMPRESA;
 
-                $data['estado_registro'] = 'A';
 
-                return $this->repository->create(
-                    $data
-                );
+                $data['estado_registro'] =
+                    'A';
+
+
+                return $this->repository
+                    ->create(
+                        $data
+                    );
 
             }
         );
+
     }
 
-    /**
-     * Actualiza un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         Proveedor $proveedor,
-        array $data
-    ): Proveedor {
+        array     $data
+    ): Proveedor
+    {
 
         return DB::transaction(
             function () use (
@@ -78,51 +114,96 @@ class ProveedorService
                 $proveedor =
                     $this->repository
                         ->findByIdForUpdate(
-
-                            $proveedor->id_proveedor
-
+                            $proveedor
+                                ->id_proveedor
                         );
+
 
                 unset(
                     $data['estado_registro'],
                     $data['usuario_creacion']
                 );
 
-                return $this->repository->update(
 
-                    $proveedor,
-
-                    $data
-
-                );
+                return $this->repository
+                    ->update(
+                        $proveedor,
+                        $data
+                    );
 
             }
         );
+
     }
 
-    /**
-     * Elimina lógicamente un proveedor.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
     public function destroy(
         Proveedor $proveedor
-    ): bool {
+    ): bool
+    {
 
         return DB::transaction(
-            function () use ($proveedor) {
+            function () use (
+                $proveedor
+            ) {
 
                 $proveedor =
                     $this->repository
                         ->findByIdForUpdate(
-
-                            $proveedor->id_proveedor
-
+                            $proveedor
+                                ->id_proveedor
                         );
 
-                return $this->repository->delete(
-                    $proveedor
-                );
+
+                return $this->repository
+                    ->delete(
+                        $proveedor
+                    );
 
             }
         );
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Proveedor $proveedor
+    ): bool
+    {
+
+        return DB::transaction(
+            function () use (
+                $proveedor
+            ) {
+
+                $proveedor =
+                    $this->repository
+                        ->findByIdForUpdate(
+                            $proveedor
+                                ->id_proveedor
+                        );
+
+
+                return $this->repository
+                    ->reactivate(
+                        $proveedor
+                    );
+
+            }
+        );
+
+    }
+
 }
