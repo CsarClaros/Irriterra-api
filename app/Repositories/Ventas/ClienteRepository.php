@@ -5,81 +5,142 @@ namespace App\Repositories\Ventas;
 use App\Models\Ventas\Cliente;
 use Illuminate\Database\Eloquent\Collection;
 
+
 class ClienteRepository
 {
-    /**
-     * Obtiene todos los clientes activos.
-     */
-    public function getAll(): Collection
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function getAll(
+        bool $incluirInactivos = false
+    ): Collection
     {
-        return Cliente::where(
-            'estado_registro',
-            'A'
-        )
+
+        $query =
+            Cliente::query();
+
+
+        if (
+            !$incluirInactivos
+        ) {
+
+            $query->where(
+                'estado_registro',
+                'A'
+            );
+
+        }
+
+
+        return $query
+            ->orderByRaw(
+                "CASE
+                    WHEN estado_registro = 'A'
+                    THEN 0
+                    ELSE 1
+                END"
+            )
             ->orderBy(
                 'nombre_razon_social'
             )
             ->get();
+
     }
 
-    /**
-     * Busca un cliente activo por su ID.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Buscar por ID
+    |--------------------------------------------------------------------------
+    */
+
     public function findById(
         int $id
-    ): Cliente {
+    ): Cliente
+    {
 
-        return Cliente::where(
-            'estado_registro',
-            'A'
-        )
-            ->findOrFail($id);
+        return Cliente::findOrFail(
+            $id
+        );
+
     }
 
-    /**
-     * Busca y bloquea un cliente para actualización.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Buscar y bloquear
+    |--------------------------------------------------------------------------
+    */
+
     public function findByIdForUpdate(
         int $id
-    ): Cliente {
+    ): Cliente
+    {
 
-        return Cliente::where(
-            'estado_registro',
-            'A'
-        )
+        return Cliente::query()
             ->lockForUpdate()
-            ->findOrFail($id);
+            ->findOrFail(
+                $id
+            );
+
     }
 
-    /**
-     * Registra un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
     public function create(
         array $data
-    ): Cliente {
+    ): Cliente
+    {
 
-        return Cliente::create($data);
+        return Cliente::create(
+            $data
+        );
+
     }
 
-    /**
-     * Actualiza un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         Cliente $cliente,
-        array $data
-    ): Cliente {
+        array   $data
+    ): Cliente
+    {
 
-        $cliente->update($data);
+        $cliente->update(
+            $data
+        );
 
-        return $cliente->fresh();
+
+        return $cliente
+            ->fresh();
+
     }
 
-    /**
-     * Realiza la eliminación lógica.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
     public function delete(
         Cliente $cliente
-    ): bool {
+    ): bool
+    {
 
         return $cliente->update([
 
@@ -87,5 +148,28 @@ class ClienteRepository
                 'I'
 
         ]);
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Cliente $cliente
+    ): bool
+    {
+
+        return $cliente->update([
+
+            'estado_registro' =>
+                'A'
+
+        ]);
+
+    }
+
 }

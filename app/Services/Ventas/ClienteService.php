@@ -7,68 +7,103 @@ use App\Repositories\Ventas\ClienteRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+
 class ClienteService
 {
-    /**
-     * Constructor.
-     */
+
     public function __construct(
         private readonly ClienteRepository $repository
-    ) {
-    }
-
-    /**
-     * Lista los clientes activos.
-     */
-    public function index(): Collection
+    )
     {
-        return $this->repository->getAll();
     }
 
-    /**
-     * Muestra un cliente activo.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(
+        bool $incluirInactivos = false
+    ): Collection
+    {
+
+        return $this->repository
+            ->getAll(
+                $incluirInactivos
+            );
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mostrar
+    |--------------------------------------------------------------------------
+    */
+
     public function show(
         int $id
-    ): Cliente {
+    ): Cliente
+    {
 
-        return $this->repository->findById(
-            $id
-        );
+        return $this->repository
+            ->findById(
+                $id
+            );
+
     }
 
-    /**
-     * Registra un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
     public function store(
         array $data
-    ): Cliente {
+    ): Cliente
+    {
 
         return DB::transaction(
-            function () use ($data) {
+            function () use (
+                $data
+            ) {
 
                 $data['estado_registro'] =
                     'A';
 
+
                 $data['tipo_cliente'] =
                     $data['tipo_cliente']
-                        ?? Cliente::PERSONA;
+                    ??
+                    Cliente::PERSONA;
 
-                return $this->repository->create(
-                    $data
-                );
+
+                return $this->repository
+                    ->create(
+                        $data
+                    );
 
             }
         );
+
     }
 
-    /**
-     * Actualiza un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         Cliente $cliente,
-        array $data
-    ): Cliente {
+        array   $data
+    ): Cliente
+    {
 
         return DB::transaction(
             function () use (
@@ -79,51 +114,96 @@ class ClienteService
                 $cliente =
                     $this->repository
                         ->findByIdForUpdate(
-
-                            $cliente->id_cliente
-
+                            $cliente
+                                ->id_cliente
                         );
+
 
                 unset(
                     $data['estado_registro'],
                     $data['usuario_creacion']
                 );
 
-                return $this->repository->update(
 
-                    $cliente,
-
-                    $data
-
-                );
+                return $this->repository
+                    ->update(
+                        $cliente,
+                        $data
+                    );
 
             }
         );
+
     }
 
-    /**
-     * Elimina lógicamente un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
     public function destroy(
         Cliente $cliente
-    ): bool {
+    ): bool
+    {
 
         return DB::transaction(
-            function () use ($cliente) {
+            function () use (
+                $cliente
+            ) {
 
                 $cliente =
                     $this->repository
                         ->findByIdForUpdate(
-
-                            $cliente->id_cliente
-
+                            $cliente
+                                ->id_cliente
                         );
 
-                return $this->repository->delete(
-                    $cliente
-                );
+
+                return $this->repository
+                    ->delete(
+                        $cliente
+                    );
 
             }
         );
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Cliente $cliente
+    ): bool
+    {
+
+        return DB::transaction(
+            function () use (
+                $cliente
+            ) {
+
+                $cliente =
+                    $this->repository
+                        ->findByIdForUpdate(
+                            $cliente
+                                ->id_cliente
+                        );
+
+
+                return $this->repository
+                    ->reactivate(
+                        $cliente
+                    );
+
+            }
+        );
+
+    }
+
 }

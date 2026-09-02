@@ -600,6 +600,23 @@ Route::middleware(
                 );
 
             /*
+            |------------------------------------------------------------
+            | Reactivar cliente
+            |-------------------------------------------------------------
+            */
+
+            Route::patch(
+                'cliente/{cliente}/reactivar',
+                [
+                    ClienteController::class,
+                    'reactivate'
+                ]
+            )
+                ->middleware(
+                    'permiso:cliente.editar'
+                );
+
+            /*
              * Ventas
              */
             Route::apiResource(

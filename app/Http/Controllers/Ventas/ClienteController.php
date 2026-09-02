@@ -10,42 +10,66 @@ use App\Http\Resources\Ventas\ClienteResource;
 use App\Models\Ventas\Cliente;
 use App\Services\Ventas\ClienteService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
-class ClienteController extends Controller
+
+class ClienteController
+    extends Controller
 {
-    /**
-     * Constructor.
-     */
+
     public function __construct(
         private readonly ClienteService $service
-    ) {
+    )
+    {
     }
 
-    /**
-     * Lista clientes activos.
-     */
-    public function index(): ClienteCollection
+
+    /*
+    |--------------------------------------------------------------------------
+    | Listar
+    |--------------------------------------------------------------------------
+    */
+
+    public function index(
+        Request $request
+    ): ClienteCollection
     {
+
+        $incluirInactivos =
+            $request->boolean(
+                'incluir_inactivos'
+            );
+
+
         return new ClienteCollection(
 
-            $this->service->index()
+            $this->service
+                ->index(
+                    $incluirInactivos
+                )
 
         );
+
     }
 
-    /**
-     * Registra un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Crear
+    |--------------------------------------------------------------------------
+    */
+
     public function store(
         StoreClienteRequest $request
-    ): JsonResponse {
+    ): JsonResponse
+    {
 
         $cliente =
-            $this->service->store(
+            $this->service
+                ->store(
+                    $request->validated()
+                );
 
-                $request->validated()
-
-            );
 
         return response()->json(
 
@@ -56,42 +80,56 @@ class ClienteController extends Controller
             201
 
         );
+
     }
 
-    /**
-     * Muestra un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mostrar
+    |--------------------------------------------------------------------------
+    */
+
     public function show(
         Cliente $cliente
-    ): ClienteResource {
+    ): ClienteResource
+    {
 
         return new ClienteResource(
 
-            $this->service->show(
-
-                $cliente->id_cliente
-
-            )
+            $this->service
+                ->show(
+                    $cliente
+                        ->id_cliente
+                )
 
         );
+
     }
 
-    /**
-     * Actualiza un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar
+    |--------------------------------------------------------------------------
+    */
+
     public function update(
         UpdateClienteRequest $request,
-        Cliente $cliente
-    ): JsonResponse {
+        Cliente              $cliente
+    ): JsonResponse
+    {
 
         $cliente =
-            $this->service->update(
+            $this->service
+                ->update(
 
-                $cliente,
+                    $cliente,
 
-                $request->validated()
+                    $request->validated()
 
-            );
+                );
+
 
         return response()->json(
 
@@ -102,24 +140,61 @@ class ClienteController extends Controller
             200
 
         );
+
     }
 
-    /**
-     * Elimina lógicamente un cliente.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Desactivar
+    |--------------------------------------------------------------------------
+    */
+
     public function destroy(
         Cliente $cliente
-    ): JsonResponse {
+    ): JsonResponse
+    {
 
-        $this->service->destroy(
-            $cliente
-        );
+        $this->service
+            ->destroy(
+                $cliente
+            );
+
 
         return response()->json([
 
             'message' =>
-                'Cliente eliminado correctamente.'
+                'Cliente desactivado correctamente.'
 
         ], 200);
+
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reactivar
+    |--------------------------------------------------------------------------
+    */
+
+    public function reactivate(
+        Cliente $cliente
+    ): JsonResponse
+    {
+
+        $this->service
+            ->reactivate(
+                $cliente
+            );
+
+
+        return response()->json([
+
+            'message' =>
+                'Cliente reactivado correctamente.'
+
+        ], 200);
+
+    }
+
 }
