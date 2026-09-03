@@ -210,9 +210,9 @@ class RolPermisoSeeder extends Seeder
 
             'reporte_transferencias.ver',
 
-            ...$this->crud(
-                'compra'
-            ),
+            'compra.ver',
+            'compra.crear',
+            'compra.editar',
 
             'compra.confirmar',
 
@@ -233,28 +233,22 @@ class RolPermisoSeeder extends Seeder
 
         $supervisor = [
 
-            ...$this->crud('empresa'),
+            'sucursal.ver',
 
-            ...$this->crud('sucursal'),
+            'categoria.ver',
 
-            ...$this->crud('categoria'),
+            'producto.ver',
 
-            ...$this->crud('producto'),
+            'producto_variante.ver',
 
-            ...$this->crud(
-                'producto_variante'
-            ),
+            'producto_imagen.ver',
 
-            ...$this->crud(
-                'producto_imagen'
-            ),
-
-            ...$this->crud('stock'),
+            'stock.ver',
+            'stock.crear',
+            'stock.editar',
 
             'movimiento.ver',
-
             'movimiento.crear',
-
             'movimiento.editar',
 
             'precio.ver',
@@ -264,13 +258,11 @@ class RolPermisoSeeder extends Seeder
             ...$this->crud('venta'),
 
             'venta.completar',
-
             'venta.anular',
 
-            ...$this->crud('proveedor'),
+            'proveedor.ver',
 
             'reporte_inventario.ver',
-
             'reporte_ventas.ver'
 
         ];
@@ -297,7 +289,9 @@ class RolPermisoSeeder extends Seeder
 
             'precio.ver',
 
-            ...$this->crud('cliente'),
+            'cliente.ver',
+            'cliente.crear',
+            'cliente.editar',
 
             ...$this->crud('venta'),
 

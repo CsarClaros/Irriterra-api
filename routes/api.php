@@ -37,6 +37,7 @@ use App\Http\Controllers\Seguridad\AuthController;
 use App\Http\Controllers\Publico\CatalogoPublicoController;
 use App\Http\Controllers\Publico\EmpresaPublicaController;
 use App\Http\Controllers\Publico\SucursalPublicaController;
+use App\Http\Controllers\Publico\ContactoPublicoController;
 
 
 /*
@@ -1035,5 +1036,23 @@ Route::prefix(
                     'index'
                 ]
             );
+
+
+            /*
+|--------------------------------------------------------------------------
+| Contacto público
+|--------------------------------------------------------------------------
+*/
+
+            Route::post(
+                'contacto',
+                [
+                    ContactoPublicoController::class,
+                    'store'
+                ]
+            )
+                ->middleware(
+                    'throttle:5,1'
+                );
         }
     );
