@@ -38,6 +38,7 @@ use App\Http\Controllers\Publico\CatalogoPublicoController;
 use App\Http\Controllers\Publico\EmpresaPublicaController;
 use App\Http\Controllers\Publico\SucursalPublicaController;
 use App\Http\Controllers\Publico\ContactoPublicoController;
+use App\Http\Controllers\Publico\SitemapPublicoController;
 
 
 /*
@@ -1054,5 +1055,21 @@ Route::prefix(
                 ->middleware(
                     'throttle:5,1'
                 );
+
+            /*
+|--------------------------------------------------------------------------
+| Sitemap
+|--------------------------------------------------------------------------
+*/
+
+            Route::get(
+                'sitemap.xml',
+                [
+                    SitemapPublicoController::class,
+                    'index'
+                ]
+            );
         }
+
+
     );
