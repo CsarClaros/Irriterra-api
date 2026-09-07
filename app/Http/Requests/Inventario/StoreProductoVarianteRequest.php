@@ -20,10 +20,35 @@ class StoreProductoVarianteRequest extends BaseRequest
 
                 'integer',
 
-                Rule::exists('producto', 'id_producto')
-                    ->where('estado_registro', 'A')
+                Rule::exists(
+                    'producto',
+                    'id_producto'
+                )
+                    ->where(
+                        'estado_registro',
+                        'A'
+                    )
 
             ],
+
+
+            'id_marca' => [
+
+                'nullable',
+
+                'integer',
+
+                Rule::exists(
+                    'marca',
+                    'id_marca'
+                )
+                    ->where(
+                        'estado_registro',
+                        'A'
+                    )
+
+            ],
+
 
             'nombre' => [
 
@@ -35,6 +60,7 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
+
             'sku' => [
 
                 'required',
@@ -43,9 +69,13 @@ class StoreProductoVarianteRequest extends BaseRequest
 
                 'max:100',
 
-                Rule::unique('producto_variante', 'sku')
+                Rule::unique(
+                    'producto_variante',
+                    'sku'
+                )
 
             ],
+
 
             'codigo_comercial' => [
 
@@ -53,14 +83,10 @@ class StoreProductoVarianteRequest extends BaseRequest
 
                 'string',
 
-                'max:100',
-
-                Rule::unique(
-                    'producto_variante',
-                    'codigo_comercial'
-                )
+                'max:100'
 
             ],
+
 
             'unidad_medida' => [
 
@@ -72,6 +98,7 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
+
             'descripcion' => [
 
                 'nullable',
@@ -79,6 +106,7 @@ class StoreProductoVarianteRequest extends BaseRequest
                 'string'
 
             ],
+
 
             'observaciones' => [
 
@@ -88,6 +116,7 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
+
             'usuario_creacion' => [
 
                 'nullable',
@@ -95,6 +124,7 @@ class StoreProductoVarianteRequest extends BaseRequest
                 'integer'
 
             ],
+
 
             'usuario_modificacion' => [
 

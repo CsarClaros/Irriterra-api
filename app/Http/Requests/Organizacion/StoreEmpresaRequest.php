@@ -7,17 +7,21 @@ use App\Http\Requests\Traits\AuditoriaRules;
 use App\Http\Requests\Traits\ContactoRules;
 use App\Http\Requests\Traits\EstadoRegistroRules;
 
+
 class StoreEmpresaRequest extends BaseRequest
 {
+
     use ContactoRules;
     use EstadoRegistroRules;
     use AuditoriaRules;
+
 
     /**
      * Reglas de validación para registrar una empresa.
      */
     public function rules(): array
     {
+
         return array_merge(
 
             [
@@ -28,6 +32,7 @@ class StoreEmpresaRequest extends BaseRequest
                     'max:150'
                 ],
 
+
                 'nit' => [
                     'required',
                     'string',
@@ -35,11 +40,20 @@ class StoreEmpresaRequest extends BaseRequest
                     'unique:empresa,nit'
                 ],
 
+
                 'direccion' => [
                     'nullable',
                     'string',
                     'max:255'
                 ],
+
+
+                'sitio_web' => [
+                    'nullable',
+                    'url',
+                    'max:255'
+                ],
+
 
                 'logo' => [
                     'nullable',
@@ -47,16 +61,14 @@ class StoreEmpresaRequest extends BaseRequest
                     'image',
                     'mimes:jpg,jpeg,png,webp',
                     'max:5120'
-                ],
+                ]
 
             ],
 
-            $this->contactoRules(),
-
-            // $this->auditoriaRules(),
-
-            // $this->estadoRegistroRules()
+            $this->contactoRules()
 
         );
+
     }
+
 }

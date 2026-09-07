@@ -13,12 +13,20 @@ class UpdateProductoVarianteRequest extends BaseRequest
      */
     public function rules(): array
     {
-        $productoVariante = $this->route('productoVariante');
+        $productoVariante =
+            $this->route(
+                'productoVariante'
+            );
+
 
         $idProductoVariante =
             $productoVariante instanceof ProductoVariante
-                ? $productoVariante->id_producto_variante
+
+                ? $productoVariante
+                ->id_producto_variante
+
                 : $productoVariante;
+
 
         return [
 
@@ -30,10 +38,37 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
                 'integer',
 
-                Rule::exists('producto', 'id_producto')
-                    ->where('estado_registro', 'A')
+                Rule::exists(
+                    'producto',
+                    'id_producto'
+                )
+                    ->where(
+                        'estado_registro',
+                        'A'
+                    )
 
             ],
+
+
+            'id_marca' => [
+
+                'sometimes',
+
+                'nullable',
+
+                'integer',
+
+                Rule::exists(
+                    'marca',
+                    'id_marca'
+                )
+                    ->where(
+                        'estado_registro',
+                        'A'
+                    )
+
+            ],
+
 
             'nombre' => [
 
@@ -47,6 +82,7 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
+
             'sku' => [
 
                 'sometimes',
@@ -57,13 +93,17 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
                 'max:100',
 
-                Rule::unique('producto_variante', 'sku')
+                Rule::unique(
+                    'producto_variante',
+                    'sku'
+                )
                     ->ignore(
                         $idProductoVariante,
                         'id_producto_variante'
                     )
 
             ],
+
 
             'codigo_comercial' => [
 
@@ -73,18 +113,10 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
                 'string',
 
-                'max:100',
-
-                Rule::unique(
-                    'producto_variante',
-                    'codigo_comercial'
-                )
-                    ->ignore(
-                        $idProductoVariante,
-                        'id_producto_variante'
-                    )
+                'max:100'
 
             ],
+
 
             'unidad_medida' => [
 
@@ -98,6 +130,7 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
+
             'descripcion' => [
 
                 'sometimes',
@@ -108,6 +141,7 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
+
             'observaciones' => [
 
                 'sometimes',
@@ -117,6 +151,7 @@ class UpdateProductoVarianteRequest extends BaseRequest
                 'string'
 
             ],
+
 
             'usuario_modificacion' => [
 

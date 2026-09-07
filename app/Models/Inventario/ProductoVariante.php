@@ -43,6 +43,10 @@ class ProductoVariante extends Model
 
         'id_producto',
 
+        'id_marca',
+
+        'id_marca',
+
         'nombre',
 
         'sku',
@@ -72,6 +76,8 @@ class ProductoVariante extends Model
 
         'id_producto' => 'integer',
 
+        'id_marca' => 'integer',
+
         'usuario_creacion' => 'integer',
 
         'usuario_modificacion' => 'integer'
@@ -96,6 +102,25 @@ class ProductoVariante extends Model
             'id_producto',
 
             'id_producto'
+
+        );
+    }
+
+    /**
+     * Marca de la variante.
+     */
+    /**
+     * Marca de la variante.
+     */
+    public function marca(): BelongsTo
+    {
+        return $this->belongsTo(
+
+            Marca::class,
+
+            'id_marca',
+
+            'id_marca'
 
         );
     }
@@ -147,7 +172,6 @@ class ProductoVariante extends Model
 
         );
     }
-
 
     /**
      * Detalles de venta asociados a la variante.

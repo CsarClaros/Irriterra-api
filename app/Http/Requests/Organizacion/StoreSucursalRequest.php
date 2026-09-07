@@ -8,6 +8,7 @@ use App\Http\Requests\Traits\ContactoRules;
 use App\Http\Requests\Traits\EstadoRegistroRules;
 use App\Http\Requests\Traits\UbicacionRules;
 use App\Http\Requests\Traits\GoogleMapsRules;
+use Illuminate\Validation\Rule;
 
 class StoreSucursalRequest extends BaseRequest
 {
@@ -27,8 +28,20 @@ class StoreSucursalRequest extends BaseRequest
             [
 
                 'id_empresa' => [
+
                     'required',
-                    'exists:empresa,id_empresa'
+
+                    'integer',
+
+                    Rule::exists(
+                        'empresa',
+                        'id_empresa'
+                    )
+                        ->where(
+                            'estado_registro',
+                            'A'
+                        )
+
                 ],
 
                 'codigo' => [

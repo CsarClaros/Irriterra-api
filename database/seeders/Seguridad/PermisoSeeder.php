@@ -41,6 +41,9 @@ class PermisoSeeder extends Seeder
             'categoria' =>
                 'categorías',
 
+            'marca' =>
+                'marcas',
+
             'producto' =>
                 'productos',
 
@@ -49,6 +52,9 @@ class PermisoSeeder extends Seeder
 
             'producto_imagen' =>
                 'imágenes de productos',
+
+            'producto_documento' =>
+                'documentos de productos',
 
             'stock' =>
                 'registros de stock',

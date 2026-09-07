@@ -48,6 +48,8 @@ class Producto extends Model
 
         'catalogo_pdf',
 
+        'controla_stock',
+
         'observaciones',
 
         'estado_registro',
@@ -66,6 +68,9 @@ class Producto extends Model
         'id_producto' => 'integer',
 
         'id_categoria' => 'integer',
+
+        'controla_stock' =>
+            'boolean',
 
         'usuario_creacion' => 'integer',
 
@@ -126,5 +131,31 @@ class Producto extends Model
 
         )
             ->orderBy('orden');
+    }
+
+    /**
+     * Documentos asociados al producto.
+     */
+    public function documentos(): HasMany
+    {
+        return $this->hasMany(
+
+            ProductoDocumento::class,
+
+            'id_producto',
+
+            'id_producto'
+
+        )
+            ->where(
+                'estado_registro',
+                'A'
+            )
+            ->orderBy(
+                'orden'
+            )
+            ->orderBy(
+                'nombre'
+            );
     }
 }

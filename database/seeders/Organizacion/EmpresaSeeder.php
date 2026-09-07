@@ -2,66 +2,88 @@
 
 namespace Database\Seeders\Organizacion;
 
-use Illuminate\Database\Seeder;
 use App\Models\Organizacion\Empresa;
+use Illuminate\Database\Seeder;
+use RuntimeException;
+
 
 class EmpresaSeeder extends Seeder
 {
+
     /**
      * Ejecuta el Seeder.
      */
     public function run(): void
     {
-        Empresa::updateOrCreate(
 
-            /*
-            |--------------------------------------------------------------------------
-            | Información General
-            |--------------------------------------------------------------------------
-            */
-            [
-                'nit' => '0',
-            ],
-
-            [
-                'nombre' => 'Irriterra',
+        $nit =
+            trim(
+                (string)
+                config(
+                    'irriterra.empresa.nit'
+                )
+            );
 
 
+        if (
+            $nit === ''
+        ) {
 
-                /*
-            |--------------------------------------------------------------------------
-            | Contacto
-            |--------------------------------------------------------------------------
-            */
+            throw new RuntimeException(
+                'Debe configurar IRRITERRA_NIT antes de ejecutar EmpresaSeeder.'
+            );
 
-                'telefono' => null,
+        }
 
-                'correo' => null,
 
-                'direccion' => null,
+        $empresa =
+            Empresa::query()
+                ->orderBy(
+                    'id_empresa'
+                )
+                ->first();
 
-                'sitio_web' => null,
 
-                /*
-            |--------------------------------------------------------------------------
-            | Recursos
-            |--------------------------------------------------------------------------
-            */
+        if (
+            $empresa
+        ) {
 
-                'logo' => 'empresa/logo.webp',
+            return;
 
-                /*
-            |--------------------------------------------------------------------------
-            | Otros
-            |--------------------------------------------------------------------------
-            */
+        }
 
-                'observaciones' => 'Empresa creada automáticamente por el sistema.',
 
-                'estado_registro' => 'A',
+        Empresa::create([
 
-            ]
+            'nombre' =>
+                'Irriterra S.R.L.',
 
-        );
+            'nit' =>
+                $nit,
+
+            'telefono' =>
+                '71289640 / 71949444',
+
+            'correo' =>
+                'info@irriterrasrl.com',
+
+            'direccion' =>
+                'Kenko, Av. Argelia, calle Mamoré, El Alto, La Paz',
+
+            'sitio_web' =>
+                'https://irriterrasrl.com',
+
+            'logo' =>
+                null,
+
+            'observaciones' =>
+                null,
+
+            'estado_registro' =>
+                'A'
+
+        ]);
+
     }
+
 }

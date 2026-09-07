@@ -9,19 +9,38 @@ use App\Http\Requests\Traits\EstadoRegistroRules;
 use App\Http\Requests\Traits\ObservacionRules;
 use Illuminate\Validation\Rule;
 
+
 class UpdateEmpresaRequest extends BaseRequest
 {
+
     use ContactoRules;
     use EstadoRegistroRules;
     use AuditoriaRules;
     use ObservacionRules;
+
 
     /**
      * Reglas para actualizar una empresa.
      */
     public function rules(): array
     {
-        $idEmpresa = $this->route('empresa') ?? $this->route('id');
+
+        $empresa =
+            $this->route(
+                'empresa'
+            );
+
+
+        $idEmpresa =
+            $empresa
+                ?->id_empresa
+            ??
+            $empresa
+            ??
+            $this->route(
+                'id'
+            );
+
 
         return array_merge(
 
@@ -33,6 +52,7 @@ class UpdateEmpresaRequest extends BaseRequest
                     'max:150'
                 ],
 
+
                 'nit' => [
 
                     'required',
@@ -41,16 +61,31 @@ class UpdateEmpresaRequest extends BaseRequest
 
                     'max:30',
 
-                    Rule::unique('empresa', 'nit')
-                        ->ignore($idEmpresa, 'id_empresa')
+                    Rule::unique(
+                        'empresa',
+                        'nit'
+                    )
+                        ->ignore(
+                            $idEmpresa,
+                            'id_empresa'
+                        )
 
                 ],
+
 
                 'direccion' => [
                     'nullable',
                     'string',
                     'max:255'
                 ],
+
+
+                'sitio_web' => [
+                    'nullable',
+                    'url',
+                    'max:255'
+                ],
+
 
                 'logo' => [
                     'sometimes',
@@ -59,18 +94,16 @@ class UpdateEmpresaRequest extends BaseRequest
                     'image',
                     'mimes:jpg,jpeg,png,webp',
                     'max:5120'
-                ],
+                ]
 
             ],
 
             $this->contactoRules(),
 
-            $this->observacionRules(),
-
-            // $this->auditoriaRules(),
-
-            // $this->estadoRegistroRules()
+            $this->observacionRules()
 
         );
+
     }
+
 }

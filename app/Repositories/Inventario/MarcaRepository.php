@@ -2,11 +2,11 @@
 
 namespace App\Repositories\Inventario;
 
-use App\Models\Inventario\Categoria;
+use App\Models\Inventario\Marca;
 use Illuminate\Database\Eloquent\Collection;
 
 
-class CategoriaRepository
+class MarcaRepository
 {
 
     /*
@@ -21,10 +21,7 @@ class CategoriaRepository
     {
 
         $query =
-            Categoria::query()
-                ->with([
-                    'padre:id_categoria,nombre,slug,estado_registro'
-                ]);
+            Marca::query();
 
 
         if (
@@ -47,13 +44,6 @@ class CategoriaRepository
                     ELSE 1
                 END"
             )
-            ->orderByRaw(
-                "CASE
-                    WHEN id_categoria_padre IS NULL
-                    THEN 0
-                    ELSE 1
-                END"
-            )
             ->orderBy(
                 'orden'
             )
@@ -67,49 +57,18 @@ class CategoriaRepository
 
     /*
     |--------------------------------------------------------------------------
-    | Buscar por ID
+    | Buscar
     |--------------------------------------------------------------------------
     */
 
     public function findById(
         int $id
-    ): Categoria
+    ): Marca
     {
 
-        return Categoria::query()
-            ->with([
-                'padre:id_categoria,nombre,slug,estado_registro'
-            ])
-            ->findOrFail(
-                $id
-            );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Obtener hijas
-    |--------------------------------------------------------------------------
-    */
-
-    public function getChildren(
-        Categoria $categoria
-    ): Collection
-    {
-
-        return Categoria::query()
-            ->where(
-                'id_categoria_padre',
-                $categoria->id_categoria
-            )
-            ->orderBy(
-                'orden'
-            )
-            ->orderBy(
-                'nombre'
-            )
-            ->get();
+        return Marca::findOrFail(
+            $id
+        );
 
     }
 
@@ -122,12 +81,12 @@ class CategoriaRepository
 
     public function slugExists(
         string $slug,
-        ?int $exceptoId = null
+        ?int   $exceptoId = null
     ): bool
     {
 
         $query =
-            Categoria::query()
+            Marca::query()
                 ->where(
                     'slug',
                     $slug
@@ -139,7 +98,7 @@ class CategoriaRepository
         ) {
 
             $query->where(
-                'id_categoria',
+                'id_marca',
                 '<>',
                 $exceptoId
             );
@@ -147,28 +106,7 @@ class CategoriaRepository
         }
 
 
-        return $query->exists();
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Hijas activas
-    |--------------------------------------------------------------------------
-    */
-
-    public function hasActiveChildren(
-        Categoria $categoria
-    ): bool
-    {
-
-        return $categoria
-            ->hijas()
-            ->where(
-                'estado_registro',
-                'A'
-            )
+        return $query
             ->exists();
 
     }
@@ -176,17 +114,17 @@ class CategoriaRepository
 
     /*
     |--------------------------------------------------------------------------
-    | Productos activos
+    | Variantes activas
     |--------------------------------------------------------------------------
     */
 
-    public function hasActiveProducts(
-        Categoria $categoria
+    public function hasActiveVariants(
+        Marca $marca
     ): bool
     {
 
-        return $categoria
-            ->productos()
+        return $marca
+            ->variantes()
             ->where(
                 'estado_registro',
                 'A'
@@ -204,10 +142,10 @@ class CategoriaRepository
 
     public function create(
         array $data
-    ): Categoria
+    ): Marca
     {
 
-        return Categoria::create(
+        return Marca::create(
             $data
         );
 
@@ -221,17 +159,17 @@ class CategoriaRepository
     */
 
     public function update(
-        Categoria $categoria,
+        Marca $marca,
         array $data
-    ): Categoria
+    ): Marca
     {
 
-        $categoria->update(
+        $marca->update(
             $data
         );
 
 
-        return $categoria
+        return $marca
             ->fresh();
 
     }
@@ -244,11 +182,11 @@ class CategoriaRepository
     */
 
     public function delete(
-        Categoria $categoria
+        Marca $marca
     ): bool
     {
 
-        return $categoria->update([
+        return $marca->update([
 
             'estado_registro' =>
                 'I'
@@ -265,11 +203,11 @@ class CategoriaRepository
     */
 
     public function reactivate(
-        Categoria $categoria
+        Marca $marca
     ): bool
     {
 
-        return $categoria->update([
+        return $marca->update([
 
             'estado_registro' =>
                 'A'

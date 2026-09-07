@@ -12,7 +12,97 @@ class StoreCategoriaRequest extends BaseRequest
      */
     public function rules(): array
     {
+        $idPadre =
+            $this->input(
+                'id_categoria_padre'
+            );
+
+
+        if (
+            $idPadre === ''
+        ) {
+
+            $idPadre =
+                null;
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Nombre único dentro del mismo padre
+        |--------------------------------------------------------------------------
+        */
+
+        $nombreUnico =
+            Rule::unique(
+                'categoria',
+                'nombre'
+            )
+                ->where(
+                    function (
+                        $query
+                    ) use (
+                        $idPadre
+                    ) {
+
+                        if (
+                            $idPadre === null
+                        ) {
+
+                            $query
+                                ->whereNull(
+                                    'id_categoria_padre'
+                                );
+
+                            return;
+
+                        }
+
+
+                        $query
+                            ->where(
+                                'id_categoria_padre',
+                                $idPadre
+                            );
+
+                    }
+                );
+
+
         return [
+
+            /*
+            |--------------------------------------------------------------------------
+            | Jerarquía
+            |--------------------------------------------------------------------------
+            */
+
+            'id_categoria_padre' => [
+
+                'nullable',
+
+                'integer',
+
+                Rule::exists(
+                    'categoria',
+                    'id_categoria'
+                )
+                    ->where(
+                        fn($query) => $query->where(
+                            'estado_registro',
+                            'A'
+                        )
+                    )
+
+            ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Información general
+            |--------------------------------------------------------------------------
+            */
 
             'nombre' => [
 
@@ -22,9 +112,10 @@ class StoreCategoriaRequest extends BaseRequest
 
                 'max:150',
 
-                Rule::unique('categoria','nombre')
+                $nombreUnico
 
             ],
+
 
             'descripcion' => [
 
@@ -35,6 +126,20 @@ class StoreCategoriaRequest extends BaseRequest
                 'max:255'
 
             ],
+
+
+            'orden' => [
+
+                'nullable',
+
+                'integer',
+
+                'min:0',
+
+                'max:65535'
+
+            ],
+
 
             'observaciones' => [
 

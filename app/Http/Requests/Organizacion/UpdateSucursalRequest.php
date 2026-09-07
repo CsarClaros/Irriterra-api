@@ -32,8 +32,20 @@ class UpdateSucursalRequest extends BaseRequest
             [
 
                 'id_empresa' => [
+
                     'required',
-                    'exists:empresa,id_empresa'
+
+                    'integer',
+
+                    Rule::exists(
+                        'empresa',
+                        'id_empresa'
+                    )
+                        ->where(
+                            'estado_registro',
+                            'A'
+                        )
+
                 ],
 
                 'codigo' => [

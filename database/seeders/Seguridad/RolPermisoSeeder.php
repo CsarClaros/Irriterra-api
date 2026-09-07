@@ -67,6 +67,10 @@ class RolPermisoSeeder extends Seeder
             ),
 
             ...$this->crud(
+                'marca'
+            ),
+
+            ...$this->crud(
                 'producto'
             ),
 
@@ -76,6 +80,10 @@ class RolPermisoSeeder extends Seeder
 
             ...$this->crud(
                 'producto_imagen'
+            ),
+
+            ...$this->crud(
+                'producto_documento'
             ),
 
             ...$this->crud(
@@ -172,6 +180,10 @@ class RolPermisoSeeder extends Seeder
                 'producto_imagen'
             ),
 
+            ...$this->crud(
+                'producto_documento'
+            ),
+
             ...$this->crud('stock'),
 
             'movimiento.ver',
@@ -237,6 +249,8 @@ class RolPermisoSeeder extends Seeder
 
             'categoria.ver',
 
+            'marca.ver',
+
             'producto.ver',
 
             'producto_variante.ver',
@@ -279,6 +293,8 @@ class RolPermisoSeeder extends Seeder
 
             'categoria.ver',
 
+            'marca.ver',
+
             'producto.ver',
 
             'producto_variante.ver',
@@ -314,6 +330,8 @@ class RolPermisoSeeder extends Seeder
             'sucursal.ver',
 
             'categoria.ver',
+
+            'marca.ver',
 
             'producto.ver',
 

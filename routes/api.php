@@ -13,6 +13,7 @@
 use App\Http\Controllers\Compras\CompraController;
 use App\Http\Controllers\Compras\ProveedorController;
 use App\Http\Controllers\Inventario\CategoriaController;
+use App\Http\Controllers\Inventario\MarcaController;
 use App\Http\Controllers\Inventario\MovimientoInventarioController;
 use App\Http\Controllers\Inventario\PrecioProductoVarianteController;
 use App\Http\Controllers\Inventario\ProductoController;
@@ -358,6 +359,57 @@ Route::middleware(
                     'permiso:categoria.eliminar'
                 );
 
+            /*
+|--------------------------------------------------------------------------
+| Reactivar marca
+|--------------------------------------------------------------------------
+*/
+
+            Route::patch(
+                'marca/{marca}/reactivar',
+                [
+                    MarcaController::class,
+                    'reactivate'
+                ]
+            )
+                ->middleware(
+                    'permiso:marca.editar'
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Marca
+            |--------------------------------------------------------------------------
+            */
+
+            Route::apiResource(
+                'marca',
+                MarcaController::class
+            )
+                ->parameters([
+
+                    'marca' =>
+                        'marca'
+
+                ])
+                ->middlewareFor(
+                    ['index', 'show'],
+                    'permiso:marca.ver'
+                )
+                ->middlewareFor(
+                    'store',
+                    'permiso:marca.crear'
+                )
+                ->middlewareFor(
+                    'update',
+                    'permiso:marca.editar'
+                )
+                ->middlewareFor(
+                    'destroy',
+                    'permiso:marca.eliminar'
+                );
+
 
             Route::apiResource(
                 'producto',
@@ -440,6 +492,57 @@ Route::middleware(
                 ->middlewareFor(
                     'destroy',
                     'permiso:producto_imagen.eliminar'
+                );
+
+            /*
+|--------------------------------------------------------------------------
+| Reactivar documento de producto
+|--------------------------------------------------------------------------
+*/
+
+            Route::patch(
+                'producto-documento/{productoDocumento}/reactivar',
+                [
+                    ProductoDocumentoController::class,
+                    'reactivate'
+                ]
+            )
+                ->middleware(
+                    'permiso:producto_documento.editar'
+                );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Documento de producto
+            |--------------------------------------------------------------------------
+            */
+
+            Route::apiResource(
+                'producto-documento',
+                ProductoDocumentoController::class
+            )
+                ->parameters([
+
+                    'producto-documento' =>
+                        'productoDocumento'
+
+                ])
+                ->middlewareFor(
+                    ['index', 'show'],
+                    'permiso:producto_documento.ver'
+                )
+                ->middlewareFor(
+                    'store',
+                    'permiso:producto_documento.crear'
+                )
+                ->middlewareFor(
+                    'update',
+                    'permiso:producto_documento.editar'
+                )
+                ->middlewareFor(
+                    'destroy',
+                    'permiso:producto_documento.eliminar'
                 );
 
 
