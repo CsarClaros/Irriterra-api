@@ -134,14 +134,21 @@ class UsuarioController extends Controller
 */
 
     public function restablecerPassword(
+        Request $request,
         Usuario $usuario
     ): JsonResponse
     {
 
+        /** @var Usuario $actor */
+        $actor =
+            $request->user();
+
+
         $this
             ->service
             ->restablecerPassword(
-                $usuario
+                $usuario,
+                $actor
             );
 
 

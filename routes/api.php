@@ -40,6 +40,7 @@ use App\Http\Controllers\Publico\EmpresaPublicaController;
 use App\Http\Controllers\Publico\SucursalPublicaController;
 use App\Http\Controllers\Publico\ContactoPublicoController;
 use App\Http\Controllers\Publico\SitemapPublicoController;
+use App\Http\Controllers\Inventario\ProductoDocumentoController;
 
 
 /*

@@ -285,10 +285,6 @@ class UsuarioService
 
         }
 
-        $this->validarCambioRolCritico(
-            $usuario,
-            $data
-        );
 
         try {
 
@@ -372,8 +368,86 @@ class UsuarioService
 */
 
     public function restablecerPassword(
-        Usuario $usuario
-    ): Usuario {
+        Usuario $usuario,
+        Usuario $actor
+    ): Usuario
+    {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Autorización
+        |--------------------------------------------------------------------------
+        */
+
+        $this->validarGestionUsuario(
+            $actor,
+            $usuario
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | No permitir autorrestablecimiento administrativo
+        |--------------------------------------------------------------------------
+        |
+        | El propio usuario debe utilizar el flujo
+        | normal de cambio de contraseña.
+        |
+        */
+
+        if (
+            $usuario->id_usuario
+            ===
+            $actor->id_usuario
+        ) {
+
+            $this->lanzarErrorNegocio(
+                'No puede restablecer su propia contraseña desde administración.'
+            );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Proteger SuperAdministrador
+        |--------------------------------------------------------------------------
+        */
+
+        $usuario->loadMissing(
+            'rol'
+        );
+
+
+        if (
+            !$usuario->rol
+        ) {
+
+            $this->lanzarErrorNegocio(
+                'No fue posible determinar el rol del usuario.'
+            );
+
+        }
+
+
+        if (
+            $usuario->rol->nombre
+            ===
+            Rol::SUPER_ADMINISTRADOR
+        ) {
+
+            $this->lanzarErrorNegocio(
+                'La contraseña del SuperAdministrador no puede restablecerse al CI.'
+            );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Restablecimiento para usuarios normales
+        |--------------------------------------------------------------------------
+        */
 
         return DB::transaction(
             function () use (
@@ -386,23 +460,11 @@ class UsuarioService
                         $usuario,
                         [
 
-                            /*
-                             * La contraseña vuelve
-                             * al CI del usuario.
-                             */
-
                             'password' =>
                                 Hash::make(
                                     (string)
                                     $usuario->ci
                                 ),
-
-
-                            /*
-                             * También recuperamos
-                             * el acceso si estaba
-                             * bloqueado.
-                             */
 
                             'intentos_fallidos' =>
                                 0,

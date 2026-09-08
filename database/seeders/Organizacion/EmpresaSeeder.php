@@ -11,30 +11,21 @@ class EmpresaSeeder extends Seeder
 {
 
     /**
-     * Ejecuta el Seeder.
+     * Inicializa la empresa principal
+     * únicamente cuando aún no existe.
      */
     public function run(): void
     {
 
-        $nit =
-            trim(
-                (string)
-                config(
-                    'irriterra.empresa.nit'
-                )
-            );
-
-
-        if (
-            $nit === ''
-        ) {
-
-            throw new RuntimeException(
-                'Debe configurar IRRITERRA_NIT antes de ejecutar EmpresaSeeder.'
-            );
-
-        }
-
+        /*
+        |--------------------------------------------------------------------------
+        | La empresa ya existe
+        |--------------------------------------------------------------------------
+        |
+        | No se sobrescriben posteriormente
+        | los datos administrados desde el ERP.
+        |
+        */
 
         $empresa =
             Empresa::query()
@@ -52,6 +43,38 @@ class EmpresaSeeder extends Seeder
 
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | NIT requerido únicamente para creación
+        |--------------------------------------------------------------------------
+        */
+
+        $nit =
+            trim(
+                (string)
+                config(
+                    'irriterra.empresa.nit'
+                )
+            );
+
+
+        if (
+            $nit === ''
+        ) {
+
+            throw new RuntimeException(
+                'Debe configurar IRRITERRA_NIT antes de crear la empresa.'
+            );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Crear empresa
+        |--------------------------------------------------------------------------
+        */
 
         Empresa::create([
 

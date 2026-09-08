@@ -12,30 +12,17 @@ class SucursalSeeder extends Seeder
 {
 
     /**
-     * Ejecuta el Seeder.
+     * Inicializa la Casa Matriz
+     * únicamente cuando aún no existe.
      */
     public function run(): void
     {
 
-        $nit =
-            trim(
-                (string)
-                config(
-                    'irriterra.empresa.nit'
-                )
-            );
-
-
-        if (
-            $nit === ''
-        ) {
-
-            throw new RuntimeException(
-                'Debe configurar IRRITERRA_NIT antes de ejecutar SucursalSeeder.'
-            );
-
-        }
-
+        /*
+        |--------------------------------------------------------------------------
+        | Empresa
+        |--------------------------------------------------------------------------
+        */
 
         $empresa =
             Empresa::query()
@@ -56,7 +43,13 @@ class SucursalSeeder extends Seeder
         }
 
 
-        Sucursal::updateOrCreate(
+        /*
+        |--------------------------------------------------------------------------
+        | Casa Matriz
+        |--------------------------------------------------------------------------
+        */
+
+        Sucursal::firstOrCreate(
 
             [
                 'codigo' =>
@@ -96,6 +89,7 @@ class SucursalSeeder extends Seeder
 
                 'estado_registro' =>
                     'A'
+
             ]
 
         );

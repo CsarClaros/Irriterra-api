@@ -6,6 +6,7 @@ use App\Models\Seguridad\Permiso;
 use App\Models\Seguridad\Rol;
 use App\Models\Seguridad\RolPermiso;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 class RolPermisoSeeder extends Seeder
 {
@@ -369,22 +370,22 @@ class RolPermisoSeeder extends Seeder
 
         $matriz = [
 
-            'SuperAdministrador' =>
+            Rol::SUPER_ADMINISTRADOR =>
                 $superAdministrador,
 
-            'Administrador' =>
+            Rol::ADMINISTRADOR =>
                 $administrador,
 
-            'Gerente' =>
+            Rol::GERENTE =>
                 $gerente,
 
-            'Supervisor' =>
+            Rol::SUPERVISOR =>
                 $supervisor,
 
-            'Vendedor' =>
+            Rol::VENDEDOR =>
                 $vendedor,
 
-            'Almacenero' =>
+            Rol::ALMACENERO =>
                 $almacenero
 
         ];
@@ -405,9 +406,14 @@ class RolPermisoSeeder extends Seeder
                     )
                     ->first();
 
-            if (!$rol) {
+            if (
+                !$rol
+            ) {
 
-                continue;
+                throw new RuntimeException(
+                    'No se encontró el rol requerido: '
+                    . $nombreRol
+                );
 
             }
 
@@ -439,9 +445,17 @@ class RolPermisoSeeder extends Seeder
                         $nombrePermiso
                     );
 
-                if (!$permiso) {
+                if (
+                    !$permiso
+                ) {
 
-                    continue;
+                    throw new RuntimeException(
+                        'No se encontró el permiso requerido: '
+                        . $nombrePermiso
+                        . ' para el rol '
+                        . $nombreRol
+                        . '.'
+                    );
 
                 }
 

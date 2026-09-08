@@ -318,7 +318,7 @@ class CategoriaSeeder
     ): Categoria
     {
 
-        return Categoria::updateOrCreate(
+        return Categoria::firstOrCreate(
 
             [
                 'slug' =>

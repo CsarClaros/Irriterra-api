@@ -117,7 +117,7 @@ class MarcaSeeder extends Seeder
             ] = $datos;
 
 
-            Marca::updateOrCreate(
+            Marca::firstOrCreate(
 
                 [
                     'slug' =>
