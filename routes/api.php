@@ -411,6 +411,22 @@ Route::middleware(
                     'permiso:marca.eliminar'
                 );
 
+            /*
+|--------------------------------------------------------------------------
+| Reactivar producto
+|--------------------------------------------------------------------------
+*/
+
+            Route::patch(
+                'producto/{producto}/reactivar',
+                [
+                    ProductoController::class,
+                    'reactivate'
+                ]
+            )
+                ->middleware(
+                    'permiso:producto.editar'
+                );
 
             Route::apiResource(
                 'producto',

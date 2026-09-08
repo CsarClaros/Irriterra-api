@@ -10,6 +10,8 @@ use App\Http\Resources\Inventario\ProductoResource;
 use App\Models\Inventario\Producto;
 use App\Services\Inventario\ProductoService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
 
 class ProductoController extends Controller
 {
@@ -18,39 +20,61 @@ class ProductoController extends Controller
      */
     public function __construct(
         private readonly ProductoService $service
-    ) {
+    )
+    {
     }
 
     /**
      * Lista productos activos.
      */
-    public function index(): ProductoCollection
+
+    /**
+     * Lista productos.
+     */
+    public function index(
+        Request $request
+    ): ProductoCollection
     {
+
+        $incluirInactivos =
+            $request->boolean(
+                'incluir_inactivas'
+            );
+
+
         return new ProductoCollection(
 
-            $this->service->index()
+            $this
+                ->service
+                ->index(
+                    $incluirInactivos
+                )
 
         );
+
     }
 
     /**
      * Registra un producto.
      */
-    public function store(StoreProductoRequest $request): JsonResponse
+    public function store(
+        StoreProductoRequest $request
+    ): JsonResponse
     {
         $producto = $this->service->store(
-
             $request->validated()
-
         );
 
-        return response()->json(
 
-            new ProductoResource($producto),
-
-            201
-
-        );
+        return (
+        new ProductoResource(
+            $producto
+        )
+        )
+            ->response()
+            ->setStatusCode(
+                201
+            );
     }
 
     /**
@@ -70,8 +94,9 @@ class ProductoController extends Controller
      */
     public function update(
         UpdateProductoRequest $request,
-        Producto $producto
-    ): JsonResponse {
+        Producto              $producto
+    ): JsonResponse
+    {
 
         $producto = $this->service->update(
 
@@ -81,26 +106,61 @@ class ProductoController extends Controller
 
         );
 
-        return response()->json(
-
-            new ProductoResource($producto),
-
-            200
-
-        );
+        return (
+        new ProductoResource(
+            $producto
+        )
+        )
+            ->response()
+            ->setStatusCode(
+                200
+            );
     }
 
     /**
-     * Eliminación lógica.
+     * Desactivación lógica.
      */
-    public function destroy(Producto $producto): JsonResponse
+    public function destroy(
+        Producto $producto
+    ): JsonResponse
     {
-        $this->service->destroy($producto);
+
+        $this
+            ->service
+            ->destroy(
+                $producto
+            );
+
 
         return response()->json([
 
-            'message' => 'Producto eliminado correctamente.'
+            'message' =>
+                'Producto desactivado correctamente.'
 
         ], 200);
+
+    }
+
+    /**
+     * Reactiva un producto.
+     */
+    public function reactivate(
+        Producto $producto
+    ): JsonResponse {
+
+        $this
+            ->service
+            ->reactivate(
+                $producto
+            );
+
+
+        return response()->json([
+
+            'message' =>
+                'Producto reactivado correctamente.'
+
+        ], 200);
+
     }
 }

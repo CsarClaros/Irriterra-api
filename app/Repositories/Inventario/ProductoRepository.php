@@ -4,60 +4,142 @@ namespace App\Repositories\Inventario;
 
 use App\Models\Inventario\Producto;
 
+
 class ProductoRepository
 {
+
     /**
-     * Lista productos activos.
+     * Lista productos.
      */
-    public function getAll()
+    public function getAll(
+        bool $incluirInactivos = false
+    )
     {
-        return Producto::with('categoria')
-            ->where('estado_registro', 'A')
-            ->orderBy('nombre')
+
+        $query =
+            Producto::with(
+                'categoria'
+            );
+
+
+        if (
+            !$incluirInactivos
+        ) {
+
+            $query->where(
+                'estado_registro',
+                'A'
+            );
+
+        }
+
+
+        return $query
+            ->orderBy(
+                'nombre'
+            )
             ->get();
+
     }
+
 
     /**
      * Busca por ID.
      */
-    public function findById(int $id): Producto
+    public function findById(
+        int $id
+    ): Producto
     {
-        return Producto::with('categoria')
-            ->findOrFail($id);
+
+        return Producto::with(
+            'categoria'
+        )
+            ->findOrFail(
+                $id
+            );
+
     }
+
 
     /**
      * Registra un producto.
      */
-    public function create(array $data): Producto
+    public function create(
+        array $data
+    ): Producto
     {
-        $producto = Producto::create($data);
 
-        return $producto->load('categoria');
+        $producto =
+            Producto::create(
+                $data
+            );
+
+
+        return $producto
+            ->load(
+                'categoria'
+            );
+
     }
+
 
     /**
      * Actualiza un producto.
      */
     public function update(
         Producto $producto,
-        array $data
-    ): Producto {
+        array    $data
+    ): Producto
+    {
 
-        $producto->update($data);
+        $producto->update(
+            $data
+        );
 
-        return $producto->fresh(['categoria']);
+
+        return $producto
+            ->fresh([
+                'categoria'
+            ]);
+
     }
+
 
     /**
-     * Eliminación lógica.
+     * Desactivación lógica.
      */
-    public function delete(Producto $producto): bool
+    public function delete(
+        Producto $producto
+    ): bool
     {
-        return $producto->update([
 
-            'estado_registro' => 'I'
+        return $producto
+            ->update([
 
-        ]);
+                'estado_registro' =>
+                    'I'
+
+            ]);
+
     }
+
+
+    /**
+     * Reactiva un producto.
+     */
+    public function reactivate(
+        Producto $producto
+    ): bool
+    {
+
+        return $producto
+            ->update([
+
+                'estado_registro' =>
+                    'A'
+
+            ]);
+
+    }
+
 }

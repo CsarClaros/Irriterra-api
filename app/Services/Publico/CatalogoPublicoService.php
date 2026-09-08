@@ -3,6 +3,7 @@
 namespace App\Services\Publico;
 
 use App\Models\Inventario\Categoria;
+use App\Models\Inventario\Marca;
 use App\Models\Inventario\PrecioProductoVariante;
 use App\Models\Inventario\Producto;
 use App\Models\Inventario\ProductoImagen;
@@ -99,6 +100,7 @@ class CatalogoPublicoService
                 ->get([
                     'id_producto_variante',
                     'id_producto',
+                    'id_marca',
                     'nombre',
                     'codigo_comercial',
                     'unidad_medida',
@@ -115,10 +117,48 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
+        | Marcas
+        |--------------------------------------------------------------------------
+        */
+
+        $idsMarcas =
+            $variantes
+                ->pluck(
+                    'id_marca'
+                )
+                ->filter()
+                ->unique()
+                ->values();
+
+
+        $marcas =
+            Marca::query()
+                ->whereIn(
+                    'id_marca',
+                    $idsMarcas
+                )
+                ->where(
+                    'estado_registro',
+                    'A'
+                )
+                ->get([
+                    'id_marca',
+                    'nombre',
+                    'sitio_web'
+                ])
+                ->keyBy(
+                    'id_marca'
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
         | Precios públicos
         |--------------------------------------------------------------------------
         |
-        | Únicamente exponemos precio_venta.
+        | Únicamente exponemos:
+        |
+        | - precio_venta
         |
         | Nunca:
         |
@@ -200,7 +240,7 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Imágenes generales
+        | Imágenes generales por producto
         |--------------------------------------------------------------------------
         |
         | id_producto_variante = NULL
@@ -259,6 +299,12 @@ class CatalogoPublicoService
 
         return [
 
+            /*
+            |--------------------------------------------------------------------------
+            | Categorías
+            |--------------------------------------------------------------------------
+            */
+
             'categorias' =>
                 $categorias
                     ->map(
@@ -278,6 +324,12 @@ class CatalogoPublicoService
                     ->all(),
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Productos
+            |--------------------------------------------------------------------------
+            */
+
             'productos' =>
                 $productos
                     ->map(
@@ -288,7 +340,8 @@ class CatalogoPublicoService
                             $variantesPorProducto,
                             $imagenesGeneralesPorProducto,
                             $imagenesPorVariante,
-                            $precios
+                            $precios,
+                            $marcas
                         ): array {
 
                             return
@@ -319,7 +372,9 @@ class CatalogoPublicoService
 
                                         $imagenesPorVariante,
 
-                                        $precios
+                                        $precios,
+
+                                        $marcas
 
                                     );
 
@@ -416,6 +471,7 @@ class CatalogoPublicoService
                 ->get([
                     'id_producto_variante',
                     'id_producto',
+                    'id_marca',
                     'nombre',
                     'codigo_comercial',
                     'unidad_medida',
@@ -432,7 +488,43 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Precios
+        | Marcas
+        |--------------------------------------------------------------------------
+        */
+
+        $idsMarcas =
+            $variantes
+                ->pluck(
+                    'id_marca'
+                )
+                ->filter()
+                ->unique()
+                ->values();
+
+
+        $marcas =
+            Marca::query()
+                ->whereIn(
+                    'id_marca',
+                    $idsMarcas
+                )
+                ->where(
+                    'estado_registro',
+                    'A'
+                )
+                ->get([
+                    'id_marca',
+                    'nombre',
+                    'sitio_web'
+                ])
+                ->keyBy(
+                    'id_marca'
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Precios públicos
         |--------------------------------------------------------------------------
         */
 
@@ -556,7 +648,9 @@ class CatalogoPublicoService
 
                     $imagenesPorVariante,
 
-                    $precios
+                    $precios,
+
+                    $marcas
 
                 );
 
@@ -602,7 +696,8 @@ class CatalogoPublicoService
         Collection $variantes,
         Collection $imagenesGenerales,
         Collection $imagenesPorVariante,
-        Collection $precios
+        Collection $precios,
+        Collection $marcas
     ): array
     {
 
@@ -619,7 +714,8 @@ class CatalogoPublicoService
                         ProductoVariante $variante
                     ) use (
                         $imagenesPorVariante,
-                        $precios
+                        $precios,
+                        $marcas
                     ): array {
 
                         return
@@ -639,7 +735,9 @@ class CatalogoPublicoService
                                             $variante
                                                 ->id_producto_variante,
                                             collect()
-                                        )
+                                        ),
+
+                                    $marcas
 
                                 );
 
@@ -676,7 +774,7 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Producto
+        | Producto público
         |--------------------------------------------------------------------------
         */
 
@@ -687,53 +785,81 @@ class CatalogoPublicoService
                 $producto
                     ->id_producto,
 
+
             'id_categoria' =>
                 (int)
                 $producto
                     ->id_categoria,
 
+
             'nombre' =>
                 $producto
                     ->nombre,
+
+
+            /*
+             * Campo legado.
+             *
+             * Se conserva temporalmente
+             * para no afectar otras partes
+             * del frontend.
+             *
+             * La marca real actualmente
+             * pertenece a cada variante.
+             */
 
             'marca' =>
                 $producto
                     ->marca,
 
+
             'modelo' =>
                 $producto
                     ->modelo,
 
+
             'descripcion' =>
                 $producto
                     ->descripcion,
+
 
             'catalogo_pdf' =>
                 $producto
                     ->catalogo_pdf,
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Categoría
+            |--------------------------------------------------------------------------
+            */
+
             'categoria' =>
                 $categoria
+
                     ? $this
                     ->transformarCategoria(
                         $categoria
                     )
+
                     : null,
 
 
             /*
-             * Solamente imágenes generales.
-             */
+            |--------------------------------------------------------------------------
+            | Imágenes generales
+            |--------------------------------------------------------------------------
+            */
 
             'imagenes' =>
                 $imagenesPublicas,
 
 
             /*
-             * Cada variante contiene ahora
-             * sus propias imágenes.
-             */
+            |--------------------------------------------------------------------------
+            | Variantes
+            |--------------------------------------------------------------------------
+            */
 
             'variantes' =>
                 $variantesPublicas
@@ -752,9 +878,36 @@ class CatalogoPublicoService
     private function transformarVariante(
         ProductoVariante        $variante,
         ?PrecioProductoVariante $precio,
-        Collection              $imagenes
+        Collection              $imagenes,
+        Collection              $marcas
     ): array
     {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Marca de la variante
+        |--------------------------------------------------------------------------
+        */
+
+        $marca =
+            $variante
+                ->id_marca
+            !== null
+
+                ? $marcas
+                ->get(
+                    $variante
+                        ->id_marca
+                )
+
+                : null;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Variante pública
+        |--------------------------------------------------------------------------
+        */
 
         return [
 
@@ -763,34 +916,83 @@ class CatalogoPublicoService
                 $variante
                     ->id_producto_variante,
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Marca
+            |--------------------------------------------------------------------------
+            */
+
+            'id_marca' =>
+                $variante
+                    ->id_marca
+                !== null
+
+                    ? (int)
+                $variante
+                    ->id_marca
+
+                    : null,
+
+
+            'marca' =>
+                $marca instanceof Marca
+
+                    ? $this
+                    ->transformarMarca(
+                        $marca
+                    )
+
+                    : null,
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Información de la variante
+            |--------------------------------------------------------------------------
+            */
+
             'nombre' =>
                 $variante
                     ->nombre,
+
 
             'codigo_comercial' =>
                 $variante
                     ->codigo_comercial,
 
+
             'unidad_medida' =>
                 $variante
                     ->unidad_medida,
+
 
             'descripcion' =>
                 $variante
                     ->descripcion,
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Precio público
+            |--------------------------------------------------------------------------
+            */
+
             'precio_venta' =>
                 $precio
+
                     ? (float)
                 $precio
                     ->precio_venta
+
                     : null,
 
 
             /*
-             * Imágenes exclusivas
-             * de esta variante.
-             */
+            |--------------------------------------------------------------------------
+            | Imágenes exclusivas de esta variante
+            |--------------------------------------------------------------------------
+            */
 
             'imagenes' =>
                 $imagenes
@@ -817,6 +1019,39 @@ class CatalogoPublicoService
 
     /*
     |--------------------------------------------------------------------------
+    | Transformar marca
+    |--------------------------------------------------------------------------
+    */
+
+    private function transformarMarca(
+        Marca $marca
+    ): array
+    {
+
+        return [
+
+            'id_marca' =>
+                (int)
+                $marca
+                    ->id_marca,
+
+
+            'nombre' =>
+                $marca
+                    ->nombre,
+
+
+            'sitio_web' =>
+                $marca
+                    ->sitio_web
+
+        ];
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Transformar imagen
     |--------------------------------------------------------------------------
     */
@@ -833,14 +1068,17 @@ class CatalogoPublicoService
                 $imagen
                     ->id_producto_imagen,
 
+
             'ruta_imagen' =>
                 $imagen
                     ->ruta_imagen,
+
 
             'orden' =>
                 (int)
                 $imagen
                     ->orden,
+
 
             'es_principal' =>
                 (bool)
