@@ -202,6 +202,19 @@ class AutenticacionService
                 )
                 ->plainTextToken;
 
+        /*
+|--------------------------------------------------------------------------
+| Información necesaria para la sesión
+|--------------------------------------------------------------------------
+*/
+        $usuario->load([
+
+            'rol.permisos',
+
+            'sucursal'
+
+        ]);
+
         return [
 
             'token' =>

@@ -82,15 +82,13 @@ class UsuarioRepository
     ): ?Usuario
     {
 
-        return Usuario::with([
-            'rol.permisos',
-            'sucursal'
-        ])
+        return Usuario::query()
             ->where(
                 'usuario',
                 $usuario
             )
             ->first();
+
     }
 
 
@@ -99,7 +97,7 @@ class UsuarioRepository
      */
     public function updateSecurity(
         Usuario $usuario,
-        array   $data
+        array $data
     ): Usuario
     {
 
@@ -108,10 +106,8 @@ class UsuarioRepository
         );
 
 
-        return $usuario->fresh([
-            'rol.permisos',
-            'sucursal'
-        ]);
+        return $usuario;
+
     }
 
 

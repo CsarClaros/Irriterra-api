@@ -20,8 +20,12 @@ class CatalogoPublicoService
     |--------------------------------------------------------------------------
     */
 
-    public function obtenerCatalogo():
-    array
+    public function obtenerCatalogo(
+        int     $pagina = 1,
+        int     $porPagina = 12,
+        ?string $buscar = null,
+        ?int    $idCategoria = null
+    ): array
     {
 
         /*
@@ -47,28 +51,201 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Productos
+        | Consulta base de productos
         |--------------------------------------------------------------------------
         */
 
-        $productos =
+        $consultaProductos =
             Producto::query()
                 ->where(
                     'estado_registro',
                     'A'
-                )
+                );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Filtro por categoría
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $idCategoria !== null
+        ) {
+
+            $consultaProductos
+                ->where(
+                    'id_categoria',
+                    $idCategoria
+                );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Búsqueda
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $buscar !== null
+        ) {
+
+            $termino =
+                '%' .
+                $buscar .
+                '%';
+
+
+            $consultaProductos
+                ->where(
+                    function (
+                        $query
+                    ) use (
+                        $termino
+                    ): void {
+
+                        /*
+                         * Datos generales del producto.
+                         */
+
+                        $query
+                            ->where(
+                                'nombre',
+                                'like',
+                                $termino
+                            )
+                            ->orWhere(
+                                'marca',
+                                'like',
+                                $termino
+                            )
+                            ->orWhere(
+                                'modelo',
+                                'like',
+                                $termino
+                            )
+                            ->orWhere(
+                                'descripcion',
+                                'like',
+                                $termino
+                            );
+
+
+                        /*
+                         * Nombre de categoría.
+                         */
+
+                        $query
+                            ->orWhereIn(
+
+                                'id_categoria',
+
+                                Categoria::query()
+                                    ->select(
+                                        'id_categoria'
+                                    )
+                                    ->where(
+                                        'estado_registro',
+                                        'A'
+                                    )
+                                    ->where(
+                                        'nombre',
+                                        'like',
+                                        $termino
+                                    )
+
+                            );
+
+
+                        /*
+                         * Información de variantes.
+                         */
+
+                        $query
+                            ->orWhereIn(
+
+                                'id_producto',
+
+                                ProductoVariante::query()
+                                    ->select(
+                                        'id_producto'
+                                    )
+                                    ->where(
+                                        'estado_registro',
+                                        'A'
+                                    )
+                                    ->where(
+                                        function (
+                                            $queryVariante
+                                        ) use (
+                                            $termino
+                                        ): void {
+
+                                            $queryVariante
+                                                ->where(
+                                                    'nombre',
+                                                    'like',
+                                                    $termino
+                                                )
+                                                ->orWhere(
+                                                    'codigo_comercial',
+                                                    'like',
+                                                    $termino
+                                                )
+                                                ->orWhere(
+                                                    'descripcion',
+                                                    'like',
+                                                    $termino
+                                                );
+
+                                        }
+                                    )
+
+                            );
+
+                    }
+                );
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Paginación real
+        |--------------------------------------------------------------------------
+        */
+
+        $paginador =
+            $consultaProductos
                 ->orderBy(
                     'nombre'
                 )
-                ->get([
-                    'id_producto',
-                    'id_categoria',
-                    'nombre',
-                    'marca',
-                    'modelo',
-                    'descripcion',
-                    'catalogo_pdf'
-                ]);
+                ->paginate(
+
+                    $porPagina,
+
+                    [
+                        'id_producto',
+                        'id_categoria',
+                        'nombre',
+                        'marca',
+                        'modelo',
+                        'descripcion',
+                        'catalogo_pdf'
+                    ],
+
+                    'page',
+
+                    $pagina
+
+                );
+
+
+        $productos =
+            $paginador
+                ->getCollection();
 
 
         $idsProductos =
@@ -80,7 +257,7 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Variantes
+        | Variantes solamente de esta página
         |--------------------------------------------------------------------------
         */
 
@@ -117,7 +294,7 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Marcas
+        | Marcas solamente de esta página
         |--------------------------------------------------------------------------
         */
 
@@ -153,18 +330,8 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Precios públicos
+        | Precios solamente de esta página
         |--------------------------------------------------------------------------
-        |
-        | Únicamente exponemos:
-        |
-        | - precio_venta
-        |
-        | Nunca:
-        |
-        | - costo_compra
-        | - precio_minimo
-        |
         */
 
         $precios =
@@ -188,7 +355,7 @@ class CatalogoPublicoService
 
         /*
         |--------------------------------------------------------------------------
-        | Imágenes
+        | Imágenes solamente de esta página
         |--------------------------------------------------------------------------
         */
 
@@ -238,15 +405,6 @@ class CatalogoPublicoService
                 );
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Imágenes generales por producto
-        |--------------------------------------------------------------------------
-        |
-        | id_producto_variante = NULL
-        |
-        */
-
         $imagenesGeneralesPorProducto =
             $imagenes
                 ->filter(
@@ -265,12 +423,6 @@ class CatalogoPublicoService
                     'id_producto'
                 );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Imágenes específicas por variante
-        |--------------------------------------------------------------------------
-        */
 
         $imagenesPorVariante =
             $imagenes
@@ -299,12 +451,6 @@ class CatalogoPublicoService
 
         return [
 
-            /*
-            |--------------------------------------------------------------------------
-            | Categorías
-            |--------------------------------------------------------------------------
-            */
-
             'categorias' =>
                 $categorias
                     ->map(
@@ -323,12 +469,6 @@ class CatalogoPublicoService
                     ->values()
                     ->all(),
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Productos
-            |--------------------------------------------------------------------------
-            */
 
             'productos' =>
                 $productos
@@ -381,9 +521,71 @@ class CatalogoPublicoService
                         }
                     )
                     ->values()
-                    ->all()
+                    ->all(),
+
+
+            'paginacion' => [
+
+                'pagina_actual' =>
+                    $paginador
+                        ->currentPage(),
+
+                'por_pagina' =>
+                    $paginador
+                        ->perPage(),
+
+                'total' =>
+                    $paginador
+                        ->total(),
+
+                'total_paginas' =>
+                    $paginador
+                        ->lastPage()
+
+            ]
 
         ];
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Obtener categorías públicas
+    |--------------------------------------------------------------------------
+    */
+
+    public function obtenerCategorias():
+    array
+    {
+
+        return Categoria::query()
+            ->where(
+                'estado_registro',
+                'A'
+            )
+            ->orderBy(
+                'nombre'
+            )
+            ->get([
+                'id_categoria',
+                'nombre'
+            ])
+            ->map(
+                function (
+                    Categoria $categoria
+                ): array {
+
+                    return
+                        $this
+                            ->transformarCategoria(
+                                $categoria
+                            );
+
+                }
+            )
+            ->values()
+            ->all();
 
     }
 

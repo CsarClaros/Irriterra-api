@@ -1120,6 +1120,14 @@ Route::prefix(
                 ]
             );
 
+            Route::get(
+                'categorias',
+                [
+                    CatalogoPublicoController::class,
+                    'categorias'
+                ]
+            );
+
 
             /*
              * Detalle de producto.
