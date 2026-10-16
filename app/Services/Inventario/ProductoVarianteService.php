@@ -10,6 +10,7 @@ use App\Repositories\Inventario\ProductoVarianteRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProductoVarianteService
 {
@@ -22,6 +23,23 @@ class ProductoVarianteService
     public function index()
     {
         return $this->repository->getAll();
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Buscar
+|--------------------------------------------------------------------------
+*/
+
+    public function search(
+        string $buscar
+    ): Collection
+    {
+        return $this->repository
+            ->search(
+                $buscar,
+                20
+            );
     }
 
     public function show(

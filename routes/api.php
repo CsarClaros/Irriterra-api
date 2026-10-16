@@ -456,6 +456,17 @@ Route::middleware(
                     'permiso:producto.eliminar'
                 );
 
+            Route::get(
+                'producto-variante/buscar',
+                [
+                    ProductoVarianteController::class,
+                    'search'
+                ]
+            )
+                ->middleware(
+                    'permiso:producto_variante.ver'
+                );
+
 
             Route::apiResource(
                 'producto-variante',

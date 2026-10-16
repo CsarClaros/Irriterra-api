@@ -10,6 +10,11 @@ use App\Http\Resources\Inventario\ProductoVarianteResource;
 use App\Models\Inventario\ProductoVariante;
 use App\Services\Inventario\ProductoVarianteService;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\Inventario\BuscarProductoVarianteRequest;
+use App\Http\Resources\Inventario\ProductoVarianteBusquedaResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+
 
 class ProductoVarianteController extends Controller
 {
@@ -29,6 +34,29 @@ class ProductoVarianteController extends Controller
         return new ProductoVarianteCollection(
 
             $this->service->index()
+
+        );
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| Buscar variantes
+|--------------------------------------------------------------------------
+*/
+
+    public function search(
+        BuscarProductoVarianteRequest $request
+    ): AnonymousResourceCollection
+    {
+        $data =
+            $request->validated();
+
+        return ProductoVarianteBusquedaResource::collection(
+
+            $this->service
+                ->search(
+                    $data['buscar']
+                )
 
         );
     }
