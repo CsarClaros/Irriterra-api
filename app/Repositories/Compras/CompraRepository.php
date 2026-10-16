@@ -57,7 +57,8 @@ class CompraRepository
      */
     public function findById(
         int $id
-    ): Compra {
+    ): Compra
+    {
 
         return Compra::with(
             self::RELATIONS
@@ -74,7 +75,8 @@ class CompraRepository
      */
     public function findByIdForUpdate(
         int $id
-    ): Compra {
+    ): Compra
+    {
 
         $compra = Compra::where(
             'estado_registro',
@@ -94,7 +96,8 @@ class CompraRepository
     public function create(
         array $data,
         array $detalles
-    ): Compra {
+    ): Compra
+    {
 
         $compra = Compra::create(
             $data
@@ -122,9 +125,10 @@ class CompraRepository
      */
     public function update(
         Compra $compra,
-        array $data,
+        array  $data,
         ?array $detalles = null
-    ): Compra {
+    ): Compra
+    {
 
         $compra->update(
             $data
@@ -155,8 +159,9 @@ class CompraRepository
      */
     public function updateState(
         Compra $compra,
-        array $data
-    ): Compra {
+        array  $data
+    ): Compra
+    {
 
         $compra->update(
             $data
@@ -172,7 +177,8 @@ class CompraRepository
      */
     public function delete(
         Compra $compra
-    ): bool {
+    ): bool
+    {
 
         CompraDetalle::where(
             'id_compra',
@@ -185,17 +191,17 @@ class CompraRepository
             ->update([
 
                 'estado_registro' =>
-                'I',
+                    'I',
 
                 'usuario_modificacion' =>
-                $compra->usuario_modificacion
+                    $compra->usuario_modificacion
 
             ]);
 
         return $compra->update([
 
             'estado_registro' =>
-            'I'
+                'I'
 
         ]);
     }
@@ -206,7 +212,8 @@ class CompraRepository
      */
     public function findPrecioProductoVarianteForUpdate(
         int $idProductoVariante
-    ): ?PrecioProductoVariante {
+    ): ?PrecioProductoVariante
+    {
 
         return PrecioProductoVariante::where(
             'id_producto_variante',
@@ -225,57 +232,58 @@ class CompraRepository
      * variante dentro de una sucursal.
      */
     public function findOrCreateStockSucursalForUpdate(
-        int $idSucursal,
-        int $idProductoVariante,
+        int  $idSucursal,
+        int  $idProductoVariante,
         ?int $idUsuario
-    ): StockSucursal {
+    ): StockSucursal
+    {
 
         $stockSucursal =
             StockSucursal::where(
                 'id_sucursal',
                 $idSucursal
             )
-            ->where(
-                'id_producto_variante',
-                $idProductoVariante
-            )
-            ->lockForUpdate()
-            ->first();
+                ->where(
+                    'id_producto_variante',
+                    $idProductoVariante
+                )
+                ->lockForUpdate()
+                ->first();
 
-        if (! $stockSucursal) {
+        if (!$stockSucursal) {
 
             $stockSucursal =
                 StockSucursal::create([
 
                     'id_sucursal' =>
-                    $idSucursal,
+                        $idSucursal,
 
                     'id_producto_variante' =>
-                    $idProductoVariante,
+                        $idProductoVariante,
 
                     'stock_actual' =>
-                    0,
+                        0,
 
                     'stock_minimo' =>
-                    0,
+                        0,
 
                     'stock_maximo' =>
-                    null,
+                        null,
 
                     'ubicacion_almacen' =>
-                    null,
+                        null,
 
                     'observaciones' =>
-                    'Stock creado automáticamente mediante recepción de compra.',
+                        'Stock creado automáticamente mediante recepción de compra.',
 
                     'estado_registro' =>
-                    'A',
+                        'A',
 
                     'usuario_creacion' =>
-                    $idUsuario,
+                        $idUsuario,
 
                     'usuario_modificacion' =>
-                    null
+                        null
 
                 ]);
         } elseif (
@@ -286,10 +294,10 @@ class CompraRepository
             $stockSucursal->update([
 
                 'estado_registro' =>
-                'A',
+                    'A',
 
                 'usuario_modificacion' =>
-                $idUsuario
+                    $idUsuario
 
             ]);
         }
@@ -308,20 +316,21 @@ class CompraRepository
      */
     public function updateCostoCompra(
         PrecioProductoVariante $precioProductoVariante,
-        float $costoCompra,
-        ?int $idUsuario
-    ): PrecioProductoVariante {
+        float                  $costoCompra,
+        ?int                   $idUsuario
+    ): PrecioProductoVariante
+    {
 
         $precioProductoVariante->update([
 
             'costo_compra' =>
-            round(
-                $costoCompra,
-                2
-            ),
+                round(
+                    $costoCompra,
+                    2
+                ),
 
             'usuario_modificacion' =>
-            $idUsuario
+                $idUsuario
 
         ]);
 
@@ -333,10 +342,11 @@ class CompraRepository
      */
     private function syncDetalles(
         Compra $compra,
-        array $detalles,
-        ?int $usuarioCreacion,
-        ?int $usuarioModificacion
-    ): void {
+        array  $detalles,
+        ?int   $usuarioCreacion,
+        ?int   $usuarioModificacion
+    ): void
+    {
 
         $idsProductoVariante = collect(
             $detalles
@@ -345,7 +355,7 @@ class CompraRepository
                 'id_producto_variante'
             )
             ->map(
-                fn($id) => (int) $id
+                fn($id) => (int)$id
             )
             ->all();
 
@@ -368,10 +378,10 @@ class CompraRepository
             ->update([
 
                 'estado_registro' =>
-                'I',
+                    'I',
 
                 'usuario_modificacion' =>
-                $usuarioModificacion
+                    $usuarioModificacion
 
             ]);
 
@@ -385,15 +395,21 @@ class CompraRepository
                 CompraDetalle::firstOrNew([
 
                     'id_compra' =>
-                    $compra->id_compra,
+                        $compra->id_compra,
 
                     'id_producto_variante' =>
-                    $detalle['id_producto_variante']
+                        $detalle['id_producto_variante']
 
                 ]);
 
             $compraDetalle->cantidad =
                 $detalle['cantidad'];
+
+            /*
+            |--------------------------------------------------------------------------
+            | Valores normalizados a BOB
+            |--------------------------------------------------------------------------
+            */
 
             $compraDetalle->costo_unitario =
                 $detalle['costo_unitario'];
@@ -404,13 +420,28 @@ class CompraRepository
             $compraDetalle->subtotal =
                 $detalle['subtotal'];
 
+            /*
+            |--------------------------------------------------------------------------
+            | Valores en moneda original
+            |--------------------------------------------------------------------------
+            */
+
+            $compraDetalle->costo_unitario_original =
+                $detalle['costo_unitario_original'];
+
+            $compraDetalle->descuento_original =
+                $detalle['descuento_original'];
+
+            $compraDetalle->subtotal_original =
+                $detalle['subtotal_original'];
+
             $compraDetalle->observaciones =
                 $detalle['observaciones'] ?? null;
 
             $compraDetalle->estado_registro =
                 'A';
 
-            if (! $compraDetalle->exists) {
+            if (!$compraDetalle->exists) {
 
                 $compraDetalle->usuario_creacion =
                     $usuarioCreacion;

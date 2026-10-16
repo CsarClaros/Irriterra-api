@@ -5,6 +5,7 @@ namespace App\Models\Inventario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MovimientoInventario extends Model
 {
@@ -135,6 +136,19 @@ class MovimientoInventario extends Model
             'id_stock_sucursal',
 
             'id_stock_sucursal'
+
+        );
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(
+
+            MovimientoInventarioItem::class,
+
+            'id_movimiento_inventario',
+
+            'id_movimiento_inventario'
 
         );
     }

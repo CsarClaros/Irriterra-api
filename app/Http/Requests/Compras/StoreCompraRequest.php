@@ -3,21 +3,130 @@
 namespace App\Http\Requests\Compras;
 
 use App\Http\Requests\BaseRequest;
+use App\Models\Compras\Compra;
 use Illuminate\Validation\Rule;
 
 class StoreCompraRequest extends BaseRequest
 {
     /**
-     * Normaliza los campos opcionales.
+     * Normaliza campos antes de validar.
      */
     protected function prepareForValidation(): void
     {
+        $moneda =
+            strtoupper(
+                trim(
+                    (string)$this->input(
+                        'moneda',
+                        Compra::MONEDA_BOB
+                    )
+                )
+            );
+
+        $detalles =
+            $this->input(
+                'detalles'
+            );
+
+        /*
+         * Compatibilidad temporal con el frontend
+         * anterior.
+         *
+         * Si todavía envía costo_unitario y descuento,
+         * los interpretamos como importes en la moneda
+         * original seleccionada.
+         */
+        if (
+            is_array(
+                $detalles
+            )
+        ) {
+
+            foreach (
+                $detalles as $indice => $detalle
+            ) {
+
+                if (
+                    !is_array(
+                        $detalle
+                    )
+                ) {
+
+                    continue;
+                }
+
+                if (
+                    !array_key_exists(
+                        'costo_unitario_original',
+                        $detalle
+                    )
+                    &&
+                    array_key_exists(
+                        'costo_unitario',
+                        $detalle
+                    )
+                ) {
+
+                    $detalle['costo_unitario_original'] =
+                        $detalle['costo_unitario'];
+                }
+
+                if (
+                    !array_key_exists(
+                        'descuento_original',
+                        $detalle
+                    )
+                    &&
+                    array_key_exists(
+                        'descuento',
+                        $detalle
+                    )
+                ) {
+
+                    $detalle['descuento_original'] =
+                        $detalle['descuento'];
+                }
+
+                $detalle['descuento_original'] =
+                    $detalle['descuento_original']
+                    ?? 0;
+
+                /*
+                 * Estos campos serán calculados
+                 * exclusivamente por el backend.
+                 */
+                unset(
+
+                    $detalle['costo_unitario'],
+
+                    $detalle['descuento'],
+
+                    $detalle['subtotal'],
+
+                    $detalle['subtotal_original']
+
+                );
+
+                $detalles[$indice] =
+                    $detalle;
+            }
+        }
+
         $this->merge([
 
             'numero_factura' =>
+
                 $this->numero_factura === ''
+
                     ? null
-                    : $this->numero_factura
+
+                    : $this->numero_factura,
+
+            'moneda' =>
+                $moneda,
+
+            'detalles' =>
+                $detalles
 
         ]);
     }
@@ -104,18 +213,69 @@ class StoreCompraRequest extends BaseRequest
                 )
                     ->where(
 
-                        fn ($query) =>
-                            $query->where(
+                        fn($query) => $query->where(
 
-                                'id_proveedor',
+                            'id_proveedor',
 
-                                $this->input(
-                                    'id_proveedor'
-                                )
-
+                            $this->input(
+                                'id_proveedor'
                             )
 
+                        )
+
                     )
+
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Moneda
+            |--------------------------------------------------------------------------
+            */
+
+            'moneda' => [
+
+                'required',
+
+                'string',
+
+                Rule::in(
+                    Compra::MONEDAS
+                )
+
+            ],
+
+            'tipo_cambio_referencia' => [
+
+                'prohibited_unless:moneda,USD',
+
+                'nullable',
+
+                'numeric',
+
+                'decimal:0,6',
+
+                'gt:0',
+
+                'max:999999999.999999'
+
+            ],
+
+            'tipo_cambio_aplicado' => [
+
+                'required_if:moneda,USD',
+
+                'prohibited_unless:moneda,USD',
+
+                'nullable',
+
+                'numeric',
+
+                'decimal:0,6',
+
+                'gt:0',
+
+                'max:999999999.999999'
 
             ],
 
@@ -180,20 +340,16 @@ class StoreCompraRequest extends BaseRequest
             ],
 
             'detalles.*.cantidad' => [
-
                 'required',
-
-                'numeric',
-
-                'decimal:0,3',
-
-                'gt:0',
-
-                'max:999999999999.999'
-
+                'integer',
+                'min:1',
             ],
 
-            'detalles.*.costo_unitario' => [
+            /*
+             * El usuario registra este valor
+             * en la moneda original de la compra.
+             */
+            'detalles.*.costo_unitario_original' => [
 
                 'required',
 
@@ -207,7 +363,7 @@ class StoreCompraRequest extends BaseRequest
 
             ],
 
-            'detalles.*.descuento' => [
+            'detalles.*.descuento_original' => [
 
                 'sometimes',
 
@@ -236,93 +392,99 @@ class StoreCompraRequest extends BaseRequest
             */
 
             'codigo_compra' => [
-
                 'prohibited'
-
             ],
 
             'estado_compra' => [
-
                 'prohibited'
-
             ],
 
             'fecha_confirmacion' => [
-
                 'prohibited'
-
             ],
 
             'fecha_recepcion' => [
-
                 'prohibited'
-
             ],
 
             'fecha_anulacion' => [
-
                 'prohibited'
-
             ],
 
             'subtotal' => [
-
                 'prohibited'
-
             ],
 
             'descuento' => [
-
                 'prohibited'
-
             ],
 
             'total' => [
-
                 'prohibited'
+            ],
 
+            'subtotal_original' => [
+                'prohibited'
+            ],
+
+            'descuento_original' => [
+                'prohibited'
+            ],
+
+            'total_original' => [
+                'prohibited'
+            ],
+
+            'origen_tipo_cambio' => [
+                'prohibited'
+            ],
+
+            'fuente_tipo_cambio' => [
+                'prohibited'
+            ],
+
+            'fecha_tipo_cambio' => [
+                'prohibited'
             ],
 
             'id_usuario_confirmacion' => [
-
                 'prohibited'
-
             ],
 
             'id_usuario_recepcion' => [
-
                 'prohibited'
-
             ],
 
             'id_usuario_anulacion' => [
-
                 'prohibited'
-
             ],
 
             'motivo_anulacion' => [
-
                 'prohibited'
-
             ],
 
             'estado_registro' => [
-
                 'prohibited'
-
             ],
 
             'usuario_modificacion' => [
-
                 'prohibited'
+            ],
 
+            'detalles.*.costo_unitario' => [
+                'prohibited'
+            ],
+
+            'detalles.*.descuento' => [
+                'prohibited'
             ],
 
             'detalles.*.subtotal' => [
-
                 'prohibited'
+            ],
 
+            'detalles.*.subtotal_original' => [
+                'prohibited'
             ]
 
         ];

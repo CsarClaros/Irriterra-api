@@ -3,13 +3,11 @@
 namespace App\Http\Requests\Inventario;
 
 use App\Http\Requests\BaseRequest;
+use App\Models\Inventario\ProductoVariante;
 use Illuminate\Validation\Rule;
 
 class StoreProductoVarianteRequest extends BaseRequest
 {
-    /**
-     * Reglas para registrar una variante.
-     */
     public function rules(): array
     {
         return [
@@ -31,7 +29,6 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'id_marca' => [
 
                 'nullable',
@@ -49,7 +46,6 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'nombre' => [
 
                 'required',
@@ -60,22 +56,17 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
-
+            /*
+             * Temporalmente aceptamos que el frontend
+             * todavía envíe SKU, pero lo excluimos.
+             *
+             * Laravel será quien lo genere.
+             */
             'sku' => [
 
-                'required',
-
-                'string',
-
-                'max:100',
-
-                Rule::unique(
-                    'producto_variante',
-                    'sku'
-                )
+                'exclude'
 
             ],
-
 
             'codigo_comercial' => [
 
@@ -87,7 +78,6 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'unidad_medida' => [
 
                 'required',
@@ -98,6 +88,20 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
+            'tipo_control_inventario' => [
+
+                'sometimes',
+
+                'required',
+
+                'string',
+
+                Rule::in(
+                    ProductoVariante::
+                    TIPOS_CONTROL_INVENTARIO
+                )
+
+            ],
 
             'descripcion' => [
 
@@ -107,7 +111,6 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'observaciones' => [
 
                 'nullable',
@@ -116,7 +119,6 @@ class StoreProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'usuario_creacion' => [
 
                 'nullable',
@@ -124,7 +126,6 @@ class StoreProductoVarianteRequest extends BaseRequest
                 'integer'
 
             ],
-
 
             'usuario_modificacion' => [
 

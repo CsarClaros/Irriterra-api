@@ -12,6 +12,7 @@
 
 use App\Http\Controllers\Compras\CompraController;
 use App\Http\Controllers\Compras\ProveedorController;
+use App\Http\Controllers\Finanzas\TipoCambioController;
 use App\Http\Controllers\Inventario\CategoriaController;
 use App\Http\Controllers\Inventario\MarcaController;
 use App\Http\Controllers\Inventario\MovimientoInventarioController;
@@ -821,6 +822,17 @@ Route::middleware(
                 );
 
             /*
+             * TIpo de Cambio
+             * */
+
+            Route::get(
+                'tipo-cambio/actual',
+                [
+                    TipoCambioController::class,
+                    'actual'
+                ]
+            );
+            /*
              * Compras
              */
 
@@ -1030,6 +1042,8 @@ Route::middleware(
 
                                 }
                             );
+
+
 
 
                         Route::prefix('compras')

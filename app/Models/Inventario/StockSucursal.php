@@ -136,4 +136,17 @@ class StockSucursal extends Model
         )
             ->orderByDesc('fecha_movimiento');
     }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(
+
+            InventarioItem::class,
+
+            'id_stock_sucursal',
+
+            'id_stock_sucursal'
+
+        );
+    }
 }

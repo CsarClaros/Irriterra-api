@@ -51,6 +51,24 @@ class CompraResource extends JsonResource
             'numero_factura' =>
                 $this->numero_factura,
 
+            'moneda' =>
+                $this->moneda,
+
+            'tipo_cambio_referencia' =>
+                $this->tipo_cambio_referencia,
+
+            'tipo_cambio_aplicado' =>
+                $this->tipo_cambio_aplicado,
+
+            'origen_tipo_cambio' =>
+                $this->origen_tipo_cambio,
+
+            'fuente_tipo_cambio' =>
+                $this->fuente_tipo_cambio,
+
+            'fecha_tipo_cambio' =>
+                $this->fecha_tipo_cambio,
+
             'subtotal' =>
                 $this->subtotal,
 
@@ -59,6 +77,15 @@ class CompraResource extends JsonResource
 
             'total' =>
                 $this->total,
+
+            'subtotal_original' =>
+                $this->subtotal_original,
+
+            'descuento_original' =>
+                $this->descuento_original,
+
+            'total_original' =>
+                $this->total_original,
 
             'id_usuario_confirmacion' =>
                 $this->id_usuario_confirmacion,

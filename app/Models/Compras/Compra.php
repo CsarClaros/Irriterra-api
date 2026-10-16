@@ -33,6 +33,37 @@ class Compra extends Model
 
     ];
 
+    /*
+|--------------------------------------------------------------------------
+| Monedas
+|--------------------------------------------------------------------------
+*/
+
+    public const MONEDA_BOB = 'BOB';
+
+    public const MONEDA_USD = 'USD';
+
+    public const MONEDAS = [
+
+        self::MONEDA_BOB,
+
+        self::MONEDA_USD
+
+    ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Origen del tipo de cambio
+    |--------------------------------------------------------------------------
+    */
+
+    public const TC_NO_APLICA = 'NO_APLICA';
+
+    public const TC_API = 'API';
+
+    public const TC_MANUAL = 'MANUAL';
+
     /**
      * Nombre de la tabla.
      */
@@ -69,11 +100,29 @@ class Compra extends Model
 
         'numero_factura',
 
+        'moneda',
+
+        'tipo_cambio_referencia',
+
+        'tipo_cambio_aplicado',
+
+        'origen_tipo_cambio',
+
+        'fuente_tipo_cambio',
+
+        'fecha_tipo_cambio',
+
         'subtotal',
 
         'descuento',
 
         'total',
+
+        'subtotal_original',
+
+        'descuento_original',
+
+        'total_original',
 
         'id_usuario_confirmacion',
 

@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 use App\Models\Inventario\MovimientoInventario;
 use App\Models\Inventario\StockSucursal;
 use App\Services\Inventario\MovimientoInventarioService;
+use App\Models\Inventario\ProductoVariante;
+use App\Services\Inventario\InventarioItemService;
 
 class CompraService
 {
@@ -18,9 +20,12 @@ class CompraService
      * Constructor.
      */
     public function __construct(
-        private readonly CompraRepository $repository,
-        private readonly MovimientoInventarioService $movimientoService
-    ) {}
+        private readonly CompraRepository            $repository,
+        private readonly MovimientoInventarioService $movimientoService,
+        private readonly InventarioItemService       $inventarioItemService
+    )
+    {
+    }
 
     /**
      * Lista las compras activas.
@@ -35,7 +40,8 @@ class CompraService
      */
     public function show(
         int $id
-    ): Compra {
+    ): Compra
+    {
 
         return $this->repository->findById(
             $id
@@ -47,7 +53,8 @@ class CompraService
      */
     public function store(
         array $data
-    ): Compra {
+    ): Compra
+    {
 
         return DB::transaction(
             function () use ($data) {
@@ -59,9 +66,30 @@ class CompraService
                     $data['detalles']
                 );
 
+                /*
+                 * El backend determina todo el
+                 * contexto monetario.
+                 */
+                $contextoMoneda =
+                    $this->resolverContextoMoneda(
+                        $data
+                    );
+
+                $data = array_merge(
+
+                    $data,
+
+                    $contextoMoneda['campos_compra']
+
+                );
+
                 $detalles =
                     $this->prepararDetalles(
-                        $detallesEntrada
+
+                        $detallesEntrada,
+
+                        $contextoMoneda['factor_conversion']
+
                     );
 
                 $totales =
@@ -70,8 +98,9 @@ class CompraService
                     );
 
                 $data['codigo_compra'] =
-                    'COM-' . Str::upper(
-                        (string) Str::ulid()
+                    'COM-'
+                    . Str::upper(
+                        (string)Str::ulid()
                     );
 
                 $data['estado_compra'] =
@@ -90,6 +119,12 @@ class CompraService
                 $data['fecha_anulacion'] =
                     null;
 
+                /*
+                |--------------------------------------------------------------------------
+                | Totales BOB
+                |--------------------------------------------------------------------------
+                */
+
                 $data['subtotal'] =
                     $totales['subtotal'];
 
@@ -98,6 +133,21 @@ class CompraService
 
                 $data['total'] =
                     $totales['total'];
+
+                /*
+                |--------------------------------------------------------------------------
+                | Totales moneda original
+                |--------------------------------------------------------------------------
+                */
+
+                $data['subtotal_original'] =
+                    $totales['subtotal_original'];
+
+                $data['descuento_original'] =
+                    $totales['descuento_original'];
+
+                $data['total_original'] =
+                    $totales['total_original'];
 
                 $data['id_usuario_confirmacion'] =
                     null;
@@ -114,13 +164,14 @@ class CompraService
                 $data['estado_registro'] =
                     'A';
 
-                return $this->repository->create(
+                return $this->repository
+                    ->create(
 
-                    $data,
+                        $data,
 
-                    $detalles
+                        $detalles
 
-                );
+                    );
             }
         );
     }
@@ -130,8 +181,9 @@ class CompraService
      */
     public function update(
         Compra $compra,
-        array $data
-    ): Compra {
+        array  $data
+    ): Compra
+    {
 
         return DB::transaction(
             function () use (
@@ -141,18 +193,25 @@ class CompraService
 
                 $compra =
                     $this->repository
-                    ->findByIdForUpdate(
+                        ->findByIdForUpdate(
 
-                        $compra->id_compra
+                            $compra->id_compra
 
-                    );
+                        );
 
                 $this->validarCompraBorrador(
                     $compra
                 );
 
-                $detalles = null;
-
+                /*
+                 * Si llegan nuevos detalles usamos
+                 * esos valores originales.
+                 *
+                 * Si no llegan, reconstruimos desde
+                 * la compra actual. Esto permite cambiar
+                 * únicamente el tipo de cambio y volver
+                 * a calcular todos los importes BOB.
+                 */
                 if (
                     array_key_exists(
                         'detalles',
@@ -167,26 +226,91 @@ class CompraService
                         $data['detalles']
                     );
 
-                    $detalles =
-                        $this->prepararDetalles(
-                            $detallesEntrada
-                        );
+                } else {
 
-                    $totales =
-                        $this->calcularTotales(
-                            $detalles
-                        );
+                    $detallesEntrada =
+                        $compra
+                            ->detalles
+                            ->map(
+                                function ($detalle) {
 
-                    $data['subtotal'] =
-                        $totales['subtotal'];
+                                    return [
 
-                    $data['descuento'] =
-                        $totales['descuento'];
+                                        'id_producto_variante' =>
+                                            $detalle
+                                                ->id_producto_variante,
 
-                    $data['total'] =
-                        $totales['total'];
+                                        'cantidad' =>
+                                            $detalle->cantidad,
+
+                                        'costo_unitario_original' =>
+                                            $detalle
+                                                ->costo_unitario_original,
+
+                                        'descuento_original' =>
+                                            $detalle
+                                                ->descuento_original,
+
+                                        'observaciones' =>
+                                            $detalle
+                                                ->observaciones
+
+                                    ];
+                                }
+                            )
+                            ->values()
+                            ->all();
                 }
 
+                /*
+                 * Combinamos los datos nuevos con
+                 * los valores monetarios actuales.
+                 */
+                $datosMoneda = [
+
+                    'moneda' =>
+                        $data['moneda']
+                        ?? $compra->moneda,
+
+                    'tipo_cambio_referencia' =>
+
+                        array_key_exists(
+                            'tipo_cambio_referencia',
+                            $data
+                        )
+
+                            ? $data['tipo_cambio_referencia']
+
+                            : $compra
+                            ->tipo_cambio_referencia,
+
+                    'tipo_cambio_aplicado' =>
+
+                        array_key_exists(
+                            'tipo_cambio_aplicado',
+                            $data
+                        )
+
+                            ? $data['tipo_cambio_aplicado']
+
+                            : $compra
+                            ->tipo_cambio_aplicado
+
+                ];
+
+                $contextoMoneda =
+                    $this->resolverContextoMoneda(
+
+                        $datosMoneda,
+
+                        $compra
+
+                    );
+
+                /*
+                 * Campos que el cliente nunca puede
+                 * controlar directamente.
+                 */
                 unset(
 
                     $data['codigo_compra'],
@@ -205,6 +329,18 @@ class CompraService
 
                     $data['total'],
 
+                    $data['subtotal_original'],
+
+                    $data['descuento_original'],
+
+                    $data['total_original'],
+
+                    $data['origen_tipo_cambio'],
+
+                    $data['fuente_tipo_cambio'],
+
+                    $data['fecha_tipo_cambio'],
+
                     $data['id_usuario_confirmacion'],
 
                     $data['id_usuario_recepcion'],
@@ -219,35 +355,56 @@ class CompraService
 
                 );
 
-                /*
-                 * Los totales calculados deben conservarse.
-                 */
-                if ($detalles !== null) {
-
-                    $totales =
-                        $this->calcularTotales(
-                            $detalles
-                        );
-
-                    $data['subtotal'] =
-                        $totales['subtotal'];
-
-                    $data['descuento'] =
-                        $totales['descuento'];
-
-                    $data['total'] =
-                        $totales['total'];
-                }
-
-                return $this->repository->update(
-
-                    $compra,
+                $data = array_merge(
 
                     $data,
 
-                    $detalles
+                    $contextoMoneda['campos_compra']
 
                 );
+
+                $detalles =
+                    $this->prepararDetalles(
+
+                        $detallesEntrada,
+
+                        $contextoMoneda['factor_conversion']
+
+                    );
+
+                $totales =
+                    $this->calcularTotales(
+                        $detalles
+                    );
+
+                $data['subtotal'] =
+                    $totales['subtotal'];
+
+                $data['descuento'] =
+                    $totales['descuento'];
+
+                $data['total'] =
+                    $totales['total'];
+
+                $data['subtotal_original'] =
+                    $totales['subtotal_original'];
+
+                $data['descuento_original'] =
+                    $totales['descuento_original'];
+
+                $data['total_original'] =
+                    $totales['total_original'];
+
+                return $this->repository
+                    ->update(
+
+                        $compra,
+
+                        $data,
+
+                        $detalles
+
+                    );
             }
         );
     }
@@ -260,8 +417,9 @@ class CompraService
      */
     public function confirmar(
         Compra $compra,
-        array $data
-    ): Compra {
+        array  $data
+    ): Compra
+    {
 
         return DB::transaction(
             function () use (
@@ -271,11 +429,11 @@ class CompraService
 
                 $compra =
                     $this->repository
-                    ->findByIdForUpdate(
+                        ->findByIdForUpdate(
 
-                        $compra->id_compra
+                            $compra->id_compra
 
-                    );
+                        );
 
                 $this->validarCompraBorrador(
                     $compra
@@ -291,16 +449,16 @@ class CompraService
 
                     [
                         'estado_compra' =>
-                        Compra::CONFIRMADA,
+                            Compra::CONFIRMADA,
 
                         'fecha_confirmacion' =>
-                        now(),
+                            now(),
 
                         'id_usuario_confirmacion' =>
-                        $data['id_usuario_confirmacion'],
+                            $data['id_usuario_confirmacion'],
 
                         'usuario_modificacion' =>
-                        $data['id_usuario_confirmacion']
+                            $data['id_usuario_confirmacion']
                     ]
 
                 );
@@ -316,8 +474,9 @@ class CompraService
      */
     public function recibir(
         Compra $compra,
-        array $data
-    ): Compra {
+        array  $data
+    ): Compra
+    {
 
         return DB::transaction(
             function () use (
@@ -327,11 +486,9 @@ class CompraService
 
                 $compra =
                     $this->repository
-                    ->findByIdForUpdate(
-
-                        $compra->id_compra
-
-                    );
+                        ->findByIdForUpdate(
+                            $compra->id_compra
+                        );
 
                 $this->validarCompraConfirmada(
                     $compra
@@ -342,14 +499,14 @@ class CompraService
                 );
 
                 /*
-             * Orden consistente para disminuir
-             * el riesgo de bloqueos cruzados.
-             */
+                 * Mantiene un orden consistente de
+                 * procesamiento y bloqueo.
+                 */
                 $detalles =
                     $compra->detalles
-                    ->sortBy(
-                        'id_producto_variante'
-                    );
+                        ->sortBy(
+                            'id_producto_variante'
+                        );
 
                 $stocks = [];
 
@@ -358,24 +515,71 @@ class CompraService
                 $costosNetos = [];
 
                 /*
-             * Primero se validan y bloquean todas
-             * las configuraciones de precios.
-             */
+                |--------------------------------------------------------------------------
+                | 1. Validar variantes, cantidades y precios
+                |--------------------------------------------------------------------------
+                */
+
                 foreach (
                     $detalles as $detalle
                 ) {
 
-                    $precioProductoVariante =
-                        $this->repository
-                        ->findPrecioProductoVarianteForUpdate(
-
-                            $detalle
-                                ->id_producto_variante
-
-                        );
+                    $productoVariante =
+                        $detalle
+                            ->productoVariante;
 
                     if (
-                        ! $precioProductoVariante
+                        !$productoVariante
+                        ||
+                        $productoVariante
+                            ->estado_registro
+                        !== 'A'
+                    ) {
+
+                        throw ValidationException::withMessages([
+
+                            'detalles' => [
+
+                                'Una variante de la compra ya no está disponible.'
+
+                            ]
+
+                        ]);
+                    }
+
+                    $tipoControl =
+                        $productoVariante
+                            ->tipo_control_inventario;
+
+                    if (
+                        !in_array(
+                            $tipoControl,
+                            ProductoVariante::
+                            TIPOS_CONTROL_INVENTARIO,
+                            true
+                        )
+                    ) {
+
+                        throw ValidationException::withMessages([
+
+                            'detalles' => [
+
+                                'Una variante posee un tipo de control de inventario no válido.'
+
+                            ]
+
+                        ]);
+                    }
+
+                    $precioProductoVariante =
+                        $this->repository
+                            ->findPrecioProductoVarianteForUpdate(
+                                $detalle
+                                    ->id_producto_variante
+                            );
+
+                    if (
+                        !$precioProductoVariante
                     ) {
 
                         throw ValidationException::withMessages([
@@ -406,12 +610,38 @@ class CompraService
                         ]);
                     }
 
+                    /*
+                     * Una unidad serializada no puede
+                     * manejar cantidades fraccionarias.
+                     */
+                    if (
+                        $tipoControl
+                        ===
+                        ProductoVariante::SERIALIZADO
+                        &&
+                        abs(
+                            $cantidad
+                            - round($cantidad)
+                        ) > 0.000001
+                    ) {
+
+                        throw ValidationException::withMessages([
+
+                            'detalles' => [
+
+                                'Las variantes serializadas deben recibirse en cantidades enteras.'
+
+                            ]
+
+                        ]);
+                    }
+
                     $costoNetoUnitario =
                         round(
 
                             (float)
                             $detalle->subtotal
-                                / $cantidad,
+                            / $cantidad,
 
                             2
 
@@ -434,117 +664,220 @@ class CompraService
 
                     $idProductoVariante =
                         $detalle
-                        ->id_producto_variante;
+                            ->id_producto_variante;
 
-                    $precios[$idProductoVariante] = $precioProductoVariante;
+                    $precios[$idProductoVariante] =
+                        $precioProductoVariante;
 
-                    $costosNetos[$idProductoVariante] = $costoNetoUnitario;
+                    $costosNetos[$idProductoVariante] =
+                        $costoNetoUnitario;
                 }
 
                 /*
-             * Después se crean, reactivan o bloquean
-             * todos los registros de stock.
-             */
+                |--------------------------------------------------------------------------
+                | 2. Crear o bloquear los stocks necesarios
+                |--------------------------------------------------------------------------
+                |
+                | SIN_CONTROL no necesita stock.
+                |
+                | CANTIDAD y SERIALIZADO sí utilizan
+                | stock_sucursal.
+                |
+                */
+
+                foreach (
+                    $detalles as $detalle
+                ) {
+
+                    $productoVariante =
+                        $detalle
+                            ->productoVariante;
+
+                    if (
+                        $productoVariante
+                            ->tipo_control_inventario
+                        ===
+                        ProductoVariante::SIN_CONTROL
+                    ) {
+
+                        continue;
+                    }
+
+                    $idProductoVariante =
+                        $detalle
+                            ->id_producto_variante;
+
+                    $stockSucursal =
+                        $this->repository
+                            ->findOrCreateStockSucursalForUpdate(
+
+                                $compra->id_sucursal,
+
+                                $idProductoVariante,
+
+                                $data['id_usuario_recepcion']
+
+                            );
+
+                    $stocks[$idProductoVariante] =
+                        $stockSucursal;
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | 3. Registrar movimientos e items serializados
+                |--------------------------------------------------------------------------
+                */
+
                 foreach (
                     $detalles as $detalle
                 ) {
 
                     $idProductoVariante =
                         $detalle
-                        ->id_producto_variante;
+                            ->id_producto_variante;
 
-                    $stockSucursal =
-                        $this->repository
-                        ->findOrCreateStockSucursalForUpdate(
+                    $productoVariante =
+                        $detalle
+                            ->productoVariante;
 
-                            $compra->id_sucursal,
+                    $tipoControl =
+                        $productoVariante
+                            ->tipo_control_inventario;
 
-                            $idProductoVariante,
+                    /*
+                     * SIN_CONTROL no altera existencias.
+                     */
+                    if (
+                        $tipoControl
+                        !==
+                        ProductoVariante::SIN_CONTROL
+                    ) {
+
+                        /** @var StockSucursal $stockSucursal */
+                        $stockSucursal =
+                            $stocks[$idProductoVariante];
+
+                        /*
+                         * Movimiento general de inventario.
+                         */
+                        $movimiento =
+                            $this->movimientoService
+                                ->store([
+
+                                    'id_stock_sucursal' =>
+                                        $stockSucursal
+                                            ->id_stock_sucursal,
+
+                                    'tipo_movimiento' =>
+                                        MovimientoInventario::ENTRADA,
+
+                                    'cantidad' =>
+                                        $detalle->cantidad,
+
+                                    'motivo' =>
+                                        'Entrada por compra '
+                                        . $compra
+                                            ->codigo_compra,
+
+                                    'tipo_referencia' =>
+                                        'COMPRA',
+
+                                    'id_referencia' =>
+                                        $compra
+                                            ->id_compra,
+
+                                    'observaciones' =>
+                                        'Entrada automática por recepción de compra.',
+
+                                    'usuario_creacion' =>
+                                        $data['id_usuario_recepcion']
+
+                                ]);
+
+                        /*
+                         * Si la variante es serializada,
+                         * creamos exactamente una unidad
+                         * física por cada unidad comprada.
+                         */
+                        if (
+                            $tipoControl
+                            ===
+                            ProductoVariante::SERIALIZADO
+                        ) {
+
+                            $cantidadItems =
+                                (int)round(
+                                    (float)
+                                    $detalle->cantidad
+                                );
+
+                            $this
+                                ->inventarioItemService
+                                ->crearPorEntrada(
+
+                                    $productoVariante,
+
+                                    $stockSucursal,
+
+                                    $movimiento,
+
+                                    $cantidadItems,
+
+                                    $detalle
+                                        ->id_compra_detalle,
+
+                                    $data['id_usuario_recepcion']
+
+                                );
+                        }
+                    }
+
+                    /*
+                     * El costo de compra se actualiza
+                     * independientemente de si controla
+                     * stock o no.
+                     */
+                    $this->repository
+                        ->updateCostoCompra(
+
+                            $precios[$idProductoVariante],
+
+                            $costosNetos[$idProductoVariante],
 
                             $data['id_usuario_recepcion']
 
                         );
-
-                    $stocks[$idProductoVariante] = $stockSucursal;
                 }
 
                 /*
-             * Una vez validados todos los detalles,
-             * se generan los movimientos y se
-             * actualizan los costos.
-             */
-                foreach (
-                    $detalles as $detalle
-                ) {
+                |--------------------------------------------------------------------------
+                | 4. Finalizar recepción
+                |--------------------------------------------------------------------------
+                */
 
-                    $idProductoVariante =
-                        $detalle
-                        ->id_producto_variante;
+                return $this->repository
+                    ->updateState(
 
-                    /** @var StockSucursal $stockSucursal */
-                    $stockSucursal =
-                        $stocks[$idProductoVariante];
+                        $compra,
 
-                    $this->movimientoService->store([
+                        [
 
-                        'id_stock_sucursal' =>
-                        $stockSucursal
-                            ->id_stock_sucursal,
+                            'estado_compra' =>
+                                Compra::RECIBIDA,
 
-                        'tipo_movimiento' =>
-                        MovimientoInventario::ENTRADA,
+                            'fecha_recepcion' =>
+                                now(),
 
-                        'cantidad' =>
-                        $detalle->cantidad,
+                            'id_usuario_recepcion' =>
+                                $data['id_usuario_recepcion'],
 
-                        'motivo' =>
-                        'Entrada por compra '
-                            . $compra->codigo_compra,
+                            'usuario_modificacion' =>
+                                $data['id_usuario_recepcion']
 
-                        'tipo_referencia' =>
-                        'COMPRA',
-
-                        'id_referencia' =>
-                        $compra->id_compra,
-
-                        'observaciones' =>
-                        'Entrada automática por recepción de compra.',
-
-                        'usuario_creacion' =>
-                        $data['id_usuario_recepcion']
-
-                    ]);
-
-                    $this->repository->updateCostoCompra(
-
-                        $precios[$idProductoVariante],
-
-                        $costosNetos[$idProductoVariante],
-
-                        $data['id_usuario_recepcion']
+                        ]
 
                     );
-                }
-
-                return $this->repository->updateState(
-
-                    $compra,
-
-                    [
-                        'estado_compra' =>
-                        Compra::RECIBIDA,
-
-                        'fecha_recepcion' =>
-                        now(),
-
-                        'id_usuario_recepcion' =>
-                        $data['id_usuario_recepcion'],
-
-                        'usuario_modificacion' =>
-                        $data['id_usuario_recepcion']
-                    ]
-
-                );
             }
         );
     }
@@ -554,8 +887,9 @@ class CompraService
      */
     public function anular(
         Compra $compra,
-        array $data
-    ): Compra {
+        array  $data
+    ): Compra
+    {
 
         return DB::transaction(
             function () use (
@@ -565,11 +899,11 @@ class CompraService
 
                 $compra =
                     $this->repository
-                    ->findByIdForUpdate(
+                        ->findByIdForUpdate(
 
-                        $compra->id_compra
+                            $compra->id_compra
 
-                    );
+                        );
 
                 $this->validarCompraAnulable(
                     $compra
@@ -581,19 +915,19 @@ class CompraService
 
                     [
                         'estado_compra' =>
-                        Compra::ANULADA,
+                            Compra::ANULADA,
 
                         'fecha_anulacion' =>
-                        now(),
+                            now(),
 
                         'id_usuario_anulacion' =>
-                        $data['id_usuario_anulacion'],
+                            $data['id_usuario_anulacion'],
 
                         'motivo_anulacion' =>
-                        $data['motivo_anulacion'],
+                            $data['motivo_anulacion'],
 
                         'usuario_modificacion' =>
-                        $data['id_usuario_anulacion']
+                            $data['id_usuario_anulacion']
                     ]
 
                 );
@@ -606,18 +940,19 @@ class CompraService
      */
     public function destroy(
         Compra $compra
-    ): bool {
+    ): bool
+    {
 
         return DB::transaction(
             function () use ($compra) {
 
                 $compra =
                     $this->repository
-                    ->findByIdForUpdate(
+                        ->findByIdForUpdate(
 
-                        $compra->id_compra
+                            $compra->id_compra
 
-                    );
+                        );
 
                 $this->validarCompraBorrador(
                     $compra
@@ -634,8 +969,10 @@ class CompraService
      * Prepara y calcula los detalles.
      */
     private function prepararDetalles(
-        array $detallesEntrada
-    ): array {
+        array $detallesEntrada,
+        float $factorConversion
+    ): array
+    {
 
         $detalles = [];
 
@@ -648,35 +985,85 @@ class CompraService
                 (float)
                 $detalleEntrada['cantidad'];
 
-            $costoUnitario =
-                (float)
-                $detalleEntrada['costo_unitario'];
-
-            $descuento =
-                isset(
-                    $detalleEntrada['descuento']
-                )
-                ? (float)
-                $detalleEntrada['descuento']
-                : 0;
-
-            $importeBruto = round(
-
-                $cantidad
-                    * $costoUnitario,
-
-                2
-
-            );
+            /*
+            |--------------------------------------------------------------------------
+            | Cantidad
+            |--------------------------------------------------------------------------
+            |
+            | Las compras de Irriterra se registran actualmente por unidades físicas,
+            | por lo que la cantidad debe ser un entero positivo.
+            |
+            | Esta validación también protege llamadas directas al servicio que no
+            | pasan por StoreCompraRequest o UpdateCompraRequest.
+            |--------------------------------------------------------------------------
+            */
 
             if (
-                $descuento
-                > $importeBruto
+                $cantidad <= 0
+                ||
+                floor($cantidad) !== $cantidad
             ) {
 
                 throw ValidationException::withMessages([
 
-                    "detalles.{$indice}.descuento" => [
+                    "detalles.{$indice}.cantidad" => [
+
+                        'La cantidad debe ser un número entero mayor que cero.'
+
+                    ]
+
+                ]);
+
+            }
+
+            /*
+             * Después de validar que no contiene parte decimal,
+             * trabajamos internamente con un entero.
+             */
+            $cantidad =
+                (int)
+                $cantidad;
+
+
+            $costoUnitarioOriginal =
+                (float)
+                $detalleEntrada['costo_unitario_original'];
+
+
+            $descuentoOriginal =
+                isset(
+                    $detalleEntrada['descuento_original']
+                )
+                    ? (float)
+                $detalleEntrada['descuento_original']
+                    : 0;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Moneda original
+            |--------------------------------------------------------------------------
+            */
+
+            $importeBrutoOriginal =
+                round(
+
+                    $cantidad
+                    *
+                    $costoUnitarioOriginal,
+
+                    2
+
+                );
+
+            if (
+                $descuentoOriginal
+                >
+                $importeBrutoOriginal
+            ) {
+
+                throw ValidationException::withMessages([
+
+                    "detalles.{$indice}.descuento_original" => [
 
                         'El descuento no puede superar el importe bruto del detalle.'
 
@@ -685,47 +1072,125 @@ class CompraService
                 ]);
             }
 
-            $subtotalDetalle = round(
+            $subtotalOriginal =
+                round(
 
-                $importeBruto
-                    - $descuento,
+                    $importeBrutoOriginal
+                    -
+                    $descuentoOriginal,
 
-                2
+                    2
 
-            );
+                );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Conversión BOB
+            |--------------------------------------------------------------------------
+            */
+
+            $costoUnitarioBob =
+                round(
+
+                    $costoUnitarioOriginal
+                    *
+                    $factorConversion,
+
+                    2
+
+                );
+
+            $descuentoBob =
+                round(
+
+                    $descuentoOriginal
+                    *
+                    $factorConversion,
+
+                    2
+
+                );
+
+            /*
+             * Calculamos desde el costo unitario BOB
+             * ya redondeado para mantener consistencia
+             * con lo almacenado.
+             */
+            $importeBrutoBob =
+                round(
+
+                    $cantidad
+                    *
+                    $costoUnitarioBob,
+
+                    2
+
+                );
+
+            $subtotalBob =
+                round(
+
+                    $importeBrutoBob
+                    -
+                    $descuentoBob,
+
+                    2
+
+                );
 
             $detalles[] = [
 
                 'id_producto_variante' =>
-                $detalleEntrada['id_producto_variante'],
+                    $detalleEntrada['id_producto_variante'],
 
                 'cantidad' =>
-                $cantidad,
-
-                'costo_unitario' =>
-                round(
-                    $costoUnitario,
-                    2
-                ),
-
-                'descuento' =>
-                round(
-                    $descuento,
-                    2
-                ),
-
-                'subtotal' =>
-                $subtotalDetalle,
+                    $cantidad,
 
                 /*
-                 * Campo interno utilizado solamente
-                 * para calcular el subtotal general.
-                 */
+                |--------------------------------------------------------------------------
+                | BOB
+                |--------------------------------------------------------------------------
+                */
+
+                'costo_unitario' =>
+                    $costoUnitarioBob,
+
+                'descuento' =>
+                    $descuentoBob,
+
+                'subtotal' =>
+                    $subtotalBob,
+
                 'importe_bruto' =>
-                $importeBruto,
+                    $importeBrutoBob,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Moneda original
+                |--------------------------------------------------------------------------
+                */
+
+                'costo_unitario_original' =>
+                    round(
+                        $costoUnitarioOriginal,
+                        2
+                    ),
+
+                'descuento_original' =>
+                    round(
+                        $descuentoOriginal,
+                        2
+                    ),
+
+                'subtotal_original' =>
+                    $subtotalOriginal,
+
+                'importe_bruto_original' =>
+                    $importeBrutoOriginal,
 
                 'observaciones' =>
-                $detalleEntrada['observaciones'] ?? null
+                    $detalleEntrada['observaciones']
+                    ?? null
 
             ];
         }
@@ -740,51 +1205,382 @@ class CompraService
         array $detalles
     ): array {
 
-        $subtotal = round(
+        /*
+        |--------------------------------------------------------------------------
+        | BOB
+        |--------------------------------------------------------------------------
+        */
 
-            collect($detalles)->sum(
+        $subtotal =
+            round(
 
-                fn(array $detalle) =>
-                $detalle['importe_bruto']
+                collect($detalles)
+                    ->sum(
 
-            ),
+                        fn (array $detalle) =>
+                        $detalle[
+                        'importe_bruto'
+                        ]
 
-            2
+                    ),
 
-        );
+                2
 
-        $descuento = round(
+            );
 
-            collect($detalles)->sum(
+        $descuento =
+            round(
 
-                fn(array $detalle) =>
-                $detalle['descuento']
+                collect($detalles)
+                    ->sum(
 
-            ),
+                        fn (array $detalle) =>
+                        $detalle[
+                        'descuento'
+                        ]
 
-            2
+                    ),
 
-        );
+                2
 
-        $total = round(
+            );
 
-            $subtotal
-                - $descuento,
+        $total =
+            round(
 
-            2
+                $subtotal
+                -
+                $descuento,
 
-        );
+                2
+
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Moneda original
+        |--------------------------------------------------------------------------
+        */
+
+        $subtotalOriginal =
+            round(
+
+                collect($detalles)
+                    ->sum(
+
+                        fn (array $detalle) =>
+                        $detalle[
+                        'importe_bruto_original'
+                        ]
+
+                    ),
+
+                2
+
+            );
+
+        $descuentoOriginal =
+            round(
+
+                collect($detalles)
+                    ->sum(
+
+                        fn (array $detalle) =>
+                        $detalle[
+                        'descuento_original'
+                        ]
+
+                    ),
+
+                2
+
+            );
+
+        $totalOriginal =
+            round(
+
+                $subtotalOriginal
+                -
+                $descuentoOriginal,
+
+                2
+
+            );
 
         return [
 
             'subtotal' =>
-            $subtotal,
+                $subtotal,
 
             'descuento' =>
-            $descuento,
+                $descuento,
 
             'total' =>
-            $total
+                $total,
+
+            'subtotal_original' =>
+                $subtotalOriginal,
+
+            'descuento_original' =>
+                $descuentoOriginal,
+
+            'total_original' =>
+                $totalOriginal
+
+        ];
+    }
+
+
+    private function resolverContextoMoneda(
+        array $data,
+        ?Compra $compraActual = null
+    ): array {
+
+        $moneda =
+            strtoupper(
+                trim(
+                    (string)
+                    (
+                        $data['moneda']
+                        ?? Compra::MONEDA_BOB
+                    )
+                )
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Compra en BOB
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $moneda
+            === Compra::MONEDA_BOB
+        ) {
+
+            return [
+
+                'factor_conversion' =>
+                    1.0,
+
+                'campos_compra' => [
+
+                    'moneda' =>
+                        Compra::MONEDA_BOB,
+
+                    'tipo_cambio_referencia' =>
+                        null,
+
+                    'tipo_cambio_aplicado' =>
+                        1,
+
+                    'origen_tipo_cambio' =>
+                        Compra::TC_NO_APLICA,
+
+                    'fuente_tipo_cambio' =>
+                        null,
+
+                    'fecha_tipo_cambio' =>
+                        null
+
+                ]
+
+            ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Compra en USD
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $moneda
+            !== Compra::MONEDA_USD
+        ) {
+
+            throw ValidationException::withMessages([
+
+                'moneda' => [
+
+                    'La moneda de la compra no es válida.'
+
+                ]
+
+            ]);
+        }
+
+        $tipoAplicado =
+            round(
+
+                (float)
+                (
+                    $data[
+                    'tipo_cambio_aplicado'
+                    ]
+                    ?? 0
+                ),
+
+                6
+
+            );
+
+        if (
+            $tipoAplicado <= 0
+        ) {
+
+            throw ValidationException::withMessages([
+
+                'tipo_cambio_aplicado' => [
+
+                    'El tipo de cambio aplicado debe ser mayor que cero.'
+
+                ]
+
+            ]);
+        }
+
+        $tipoReferencia =
+            null;
+
+        if (
+            array_key_exists(
+                'tipo_cambio_referencia',
+                $data
+            )
+            &&
+            $data[
+            'tipo_cambio_referencia'
+            ] !== null
+        ) {
+
+            $tipoReferencia =
+                round(
+
+                    (float)
+                    $data[
+                    'tipo_cambio_referencia'
+                    ],
+
+                    6
+
+                );
+
+            if (
+                $tipoReferencia <= 0
+            ) {
+
+                throw ValidationException::withMessages([
+
+                    'tipo_cambio_referencia' => [
+
+                        'El tipo de cambio de referencia debe ser mayor que cero.'
+
+                    ]
+
+                ]);
+            }
+        }
+
+        $origen =
+            (
+                $tipoReferencia !== null
+                &&
+                abs(
+                    $tipoAplicado
+                    -
+                    $tipoReferencia
+                ) < 0.000001
+            )
+
+                ? Compra::TC_API
+
+                : Compra::TC_MANUAL;
+
+        /*
+         * Si no cambió la configuración monetaria
+         * durante una edición, conservamos la fecha
+         * original de referencia.
+         */
+        $mantenerFecha =
+            $compraActual !== null
+            &&
+            $compraActual->moneda
+            === Compra::MONEDA_USD
+            &&
+            abs(
+                (float)
+                $compraActual
+                    ->tipo_cambio_aplicado
+                -
+                $tipoAplicado
+            ) < 0.000001
+            &&
+            (
+                (
+                    $compraActual
+                        ->tipo_cambio_referencia
+                    === null
+                    &&
+                    $tipoReferencia
+                    === null
+                )
+                ||
+                (
+                    $compraActual
+                        ->tipo_cambio_referencia
+                    !== null
+                    &&
+                    $tipoReferencia
+                    !== null
+                    &&
+                    abs(
+                        (float)
+                        $compraActual
+                            ->tipo_cambio_referencia
+                        -
+                        $tipoReferencia
+                    ) < 0.000001
+                )
+            );
+
+        return [
+
+            'factor_conversion' =>
+                $tipoAplicado,
+
+            'campos_compra' => [
+
+                'moneda' =>
+                    Compra::MONEDA_USD,
+
+                'tipo_cambio_referencia' =>
+                    $tipoReferencia,
+
+                'tipo_cambio_aplicado' =>
+                    $tipoAplicado,
+
+                'origen_tipo_cambio' =>
+                    $origen,
+
+                'fuente_tipo_cambio' =>
+
+                    $tipoReferencia !== null
+
+                        ? 'Banco Central de Bolivia'
+
+                        : null,
+
+                'fecha_tipo_cambio' =>
+
+                    $mantenerFecha
+
+                        ? $compraActual
+                        ->fecha_tipo_cambio
+
+                        : now()
+
+            ]
 
         ];
     }
@@ -794,7 +1590,8 @@ class CompraService
      */
     private function validarCompraBorrador(
         Compra $compra
-    ): void {
+    ): void
+    {
 
         if (
             $compra->estado_compra
@@ -818,7 +1615,8 @@ class CompraService
      */
     private function validarCompraConfirmada(
         Compra $compra
-    ): void {
+    ): void
+    {
 
         if (
             $compra->estado_compra
@@ -842,7 +1640,8 @@ class CompraService
      */
     private function validarCompraAnulable(
         Compra $compra
-    ): void {
+    ): void
+    {
 
         $estadosPermitidos = [
 
@@ -853,7 +1652,7 @@ class CompraService
         ];
 
         if (
-            ! in_array(
+            !in_array(
                 $compra->estado_compra,
                 $estadosPermitidos,
                 true
@@ -878,7 +1677,8 @@ class CompraService
      */
     private function validarDetallesCompra(
         Compra $compra
-    ): void {
+    ): void
+    {
 
         if (
             $compra->detalles->isEmpty()
@@ -918,11 +1718,12 @@ class CompraService
      */
     private function convertirACentavos(
         float|int|string $importe
-    ): int {
+    ): int
+    {
 
-        return (int) round(
+        return (int)round(
 
-            (float) $importe * 100
+            (float)$importe * 100
 
         );
     }

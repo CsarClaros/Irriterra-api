@@ -13,7 +13,8 @@ class CompraDetalleResource extends JsonResource
      */
     public function toArray(
         Request $request
-    ): array {
+    ): array
+    {
 
         return [
 
@@ -32,11 +33,20 @@ class CompraDetalleResource extends JsonResource
             'costo_unitario' =>
                 $this->costo_unitario,
 
+            'costo_unitario_original' =>
+                $this->costo_unitario_original,
+
             'descuento' =>
                 $this->descuento,
 
+            'descuento_original' =>
+                $this->descuento_original,
+
             'subtotal' =>
                 $this->subtotal,
+
+            'subtotal_original' =>
+                $this->subtotal_original,
 
             'observaciones' =>
                 $this->observaciones,

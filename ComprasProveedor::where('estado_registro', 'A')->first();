@@ -1,0 +1,17 @@
+[90m= [39m[34;4mApp\Models\Organizacion\Sucursal[39;24m {#8714
+    [34mid_sucursal[39m: [35m1[39m,
+    [34mid_empresa[39m: [35m1[39m,
+    [34mcodigo[39m: [32m"[39m[32mSC-001[39m[32m"[39m,
+    [34mnombre[39m: [32m"[39m[32mCasa Matriz[39m[32m"[39m,
+    [34mdepartamento[39m: [32m"[39m[32mLa Paz[39m[32m"[39m,
+    [34mciudad[39m: [32m"[39m[32mEl Alto[39m[32m"[39m,
+    [34mdireccion[39m: [32m"[39m[32mKenko, Av. Argelia, calle Mamoré[39m[32m"[39m,
+    [34mtelefono[39m: [32m"[39m[32m71289640 / 71949444[39m[32m"[39m,
+    [34mcorreo[39m: [32m"[39m[32minfo@irriterrasrl.com[39m[32m"[39m,
+    [34murl_maps[39m: [32m"[39m[32mhttps://maps.app.goo.gl/FMV4m9QyyXA8K7fF6[39m[32m"[39m,
+    [34murl_maps_embed[39m: [32m"[39m[32mhttps://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d543.0696436328201!2d-68.19272764323624!3d-16.554569115644714!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses-419!2sbo!4v1788729984121!5m2!1ses-419!2sbo[39m[32m"[39m,
+    [34mobservaciones[39m: [36mnull[39m,
+    [34mestado_registro[39m: [32m"[39m[32mA[39m[32m"[39m,
+    [34mcreated_at[39m: [32m"[39m[32m2026-09-07 01:30:49[39m[32m"[39m,
+    [34mupdated_at[39m: [32m"[39m[32m2026-09-07 01:30:49[39m[32m"[39m,
+  }

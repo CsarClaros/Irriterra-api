@@ -10,31 +10,189 @@ use Illuminate\Validation\Validator;
 class UpdateCompraRequest extends BaseRequest
 {
     /**
-     * Normaliza los campos opcionales.
+     * Normaliza campos opcionales.
      */
     protected function prepareForValidation(): void
     {
+        $compra =
+            $this->route(
+                'compra'
+            );
+
+        if (
+            !$compra instanceof Compra
+            &&
+            $compra !== null
+        ) {
+
+            $compra =
+                Compra::find(
+                    $compra
+                );
+        }
+
+        $monedaActual =
+            $compra?->moneda
+            ?? Compra::MONEDA_BOB;
+
+        $moneda =
+            strtoupper(
+                trim(
+                    (string)$this->input(
+                        'moneda',
+                        $monedaActual
+                    )
+                )
+            );
+
+        $merge = [
+
+            'moneda' =>
+                $moneda
+
+        ];
+
         if (
             $this->exists(
                 'numero_factura'
             )
         ) {
 
-            $this->merge([
+            $merge['numero_factura'] =
+                $this->numero_factura === ''
 
-                'numero_factura' =>
-                    $this->numero_factura === ''
-                        ? null
-                        : $this->numero_factura
+                    ? null
 
-            ]);
-
+                    : $this->numero_factura;
         }
+
+        /*
+         * Una compra USD ya existente conserva
+         * su tipo de cambio si el cliente no
+         * vuelve a enviarlo.
+         */
+        if (
+            $moneda === Compra::MONEDA_USD
+            &&
+            !$this->exists(
+                'tipo_cambio_aplicado'
+            )
+            &&
+            $compra
+            &&
+            $compra->moneda
+            === Compra::MONEDA_USD
+        ) {
+
+            $merge['tipo_cambio_aplicado'] =
+                $compra
+                    ->tipo_cambio_aplicado;
+        }
+
+        if (
+            $moneda === Compra::MONEDA_USD
+            &&
+            !$this->exists(
+                'tipo_cambio_referencia'
+            )
+            &&
+            $compra
+            &&
+            $compra
+                ->tipo_cambio_referencia
+            !== null
+        ) {
+
+            $merge['tipo_cambio_referencia'] =
+                $compra
+                    ->tipo_cambio_referencia;
+        }
+
+        $detalles =
+            $this->input(
+                'detalles'
+            );
+
+        if (
+            is_array(
+                $detalles
+            )
+        ) {
+
+            foreach (
+                $detalles as $indice => $detalle
+            ) {
+
+                if (
+                    !is_array(
+                        $detalle
+                    )
+                ) {
+
+                    continue;
+                }
+
+                if (
+                    !array_key_exists(
+                        'costo_unitario_original',
+                        $detalle
+                    )
+                    &&
+                    array_key_exists(
+                        'costo_unitario',
+                        $detalle
+                    )
+                ) {
+
+                    $detalle['costo_unitario_original'] =
+                        $detalle['costo_unitario'];
+                }
+
+                if (
+                    !array_key_exists(
+                        'descuento_original',
+                        $detalle
+                    )
+                    &&
+                    array_key_exists(
+                        'descuento',
+                        $detalle
+                    )
+                ) {
+
+                    $detalle['descuento_original'] =
+                        $detalle['descuento'];
+                }
+
+                $detalle['descuento_original'] =
+                    $detalle['descuento_original']
+                    ?? 0;
+
+                unset(
+
+                    $detalle['costo_unitario'],
+
+                    $detalle['descuento'],
+
+                    $detalle['subtotal'],
+
+                    $detalle['subtotal_original']
+
+                );
+
+                $detalles[$indice] =
+                    $detalle;
+            }
+
+            $merge['detalles'] =
+                $detalles;
+        }
+
+        $this->merge(
+            $merge
+        );
     }
 
-    /**
-     * Reglas para actualizar una compra.
-     */
     public function rules(): array
     {
         $compra =
@@ -43,14 +201,13 @@ class UpdateCompraRequest extends BaseRequest
             );
 
         if (
-            ! $compra instanceof Compra
+            !$compra instanceof Compra
         ) {
 
             $compra =
                 Compra::findOrFail(
                     $compra
                 );
-
         }
 
         $idProveedor =
@@ -149,14 +306,13 @@ class UpdateCompraRequest extends BaseRequest
                 )
                     ->where(
 
-                        fn ($query) =>
-                            $query->where(
+                        fn($query) => $query->where(
 
-                                'id_proveedor',
+                            'id_proveedor',
 
-                                $idProveedor
+                            $idProveedor
 
-                            )
+                        )
 
                     )
                     ->ignore(
@@ -166,6 +322,58 @@ class UpdateCompraRequest extends BaseRequest
                         'id_compra'
 
                     )
+
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Moneda
+            |--------------------------------------------------------------------------
+            */
+
+            'moneda' => [
+
+                'required',
+
+                'string',
+
+                Rule::in(
+                    Compra::MONEDAS
+                )
+
+            ],
+
+            'tipo_cambio_referencia' => [
+
+                'prohibited_unless:moneda,USD',
+
+                'nullable',
+
+                'numeric',
+
+                'decimal:0,6',
+
+                'gt:0',
+
+                'max:999999999.999999'
+
+            ],
+
+            'tipo_cambio_aplicado' => [
+
+                'required_if:moneda,USD',
+
+                'prohibited_unless:moneda,USD',
+
+                'nullable',
+
+                'numeric',
+
+                'decimal:0,6',
+
+                'gt:0',
+
+                'max:999999999.999999'
 
             ],
 
@@ -236,20 +444,12 @@ class UpdateCompraRequest extends BaseRequest
             ],
 
             'detalles.*.cantidad' => [
-
-                'required_with:detalles',
-
-                'numeric',
-
-                'decimal:0,3',
-
-                'gt:0',
-
-                'max:999999999999.999'
-
+                'required',
+                'integer',
+                'min:1',
             ],
 
-            'detalles.*.costo_unitario' => [
+            'detalles.*.costo_unitario_original' => [
 
                 'required_with:detalles',
 
@@ -263,7 +463,7 @@ class UpdateCompraRequest extends BaseRequest
 
             ],
 
-            'detalles.*.descuento' => [
+            'detalles.*.descuento_original' => [
 
                 'sometimes',
 
@@ -291,101 +491,59 @@ class UpdateCompraRequest extends BaseRequest
             |--------------------------------------------------------------------------
             */
 
-            'codigo_compra' => [
+            'codigo_compra' => ['prohibited'],
 
-                'prohibited'
+            'estado_compra' => ['prohibited'],
 
-            ],
+            'fecha_confirmacion' => ['prohibited'],
 
-            'estado_compra' => [
+            'fecha_recepcion' => ['prohibited'],
 
-                'prohibited'
+            'fecha_anulacion' => ['prohibited'],
 
-            ],
+            'subtotal' => ['prohibited'],
 
-            'fecha_confirmacion' => [
+            'descuento' => ['prohibited'],
 
-                'prohibited'
+            'total' => ['prohibited'],
 
-            ],
+            'subtotal_original' => ['prohibited'],
 
-            'fecha_recepcion' => [
+            'descuento_original' => ['prohibited'],
 
-                'prohibited'
+            'total_original' => ['prohibited'],
 
-            ],
+            'origen_tipo_cambio' => ['prohibited'],
 
-            'fecha_anulacion' => [
+            'fuente_tipo_cambio' => ['prohibited'],
 
-                'prohibited'
+            'fecha_tipo_cambio' => ['prohibited'],
 
-            ],
+            'id_usuario_confirmacion' => ['prohibited'],
 
-            'subtotal' => [
+            'id_usuario_recepcion' => ['prohibited'],
 
-                'prohibited'
+            'id_usuario_anulacion' => ['prohibited'],
 
-            ],
+            'motivo_anulacion' => ['prohibited'],
 
-            'descuento' => [
+            'estado_registro' => ['prohibited'],
 
-                'prohibited'
+            'usuario_creacion' => ['prohibited'],
 
-            ],
+            'detalles.*.costo_unitario' => ['prohibited'],
 
-            'total' => [
+            'detalles.*.descuento' => ['prohibited'],
 
-                'prohibited'
+            'detalles.*.subtotal' => ['prohibited'],
 
-            ],
-
-            'id_usuario_confirmacion' => [
-
-                'prohibited'
-
-            ],
-
-            'id_usuario_recepcion' => [
-
-                'prohibited'
-
-            ],
-
-            'id_usuario_anulacion' => [
-
-                'prohibited'
-
-            ],
-
-            'motivo_anulacion' => [
-
-                'prohibited'
-
-            ],
-
-            'estado_registro' => [
-
-                'prohibited'
-
-            ],
-
-            'usuario_creacion' => [
-
-                'prohibited'
-
-            ],
-
-            'detalles.*.subtotal' => [
-
-                'prohibited'
-
-            ]
+            'detalles.*.subtotal_original' => ['prohibited']
 
         ];
     }
 
     /**
-     * Validaciones posteriores.
+     * Solo pueden editarse compras en borrador.
      */
     public function after(): array
     {
@@ -401,14 +559,13 @@ class UpdateCompraRequest extends BaseRequest
                     );
 
                 if (
-                    ! $compra instanceof Compra
+                    !$compra instanceof Compra
                 ) {
 
                     $compra =
                         Compra::findOrFail(
                             $compra
                         );
-
                 }
 
                 if (
@@ -416,16 +573,16 @@ class UpdateCompraRequest extends BaseRequest
                     !== Compra::BORRADOR
                 ) {
 
-                    $validator->errors()->add(
+                    $validator
+                        ->errors()
+                        ->add(
 
-                        'estado_compra',
+                            'estado_compra',
 
-                        'Solo pueden actualizarse compras en borrador.'
+                            'Solo pueden actualizarse compras en borrador.'
 
-                    );
-
+                        );
                 }
-
             }
 
         ];

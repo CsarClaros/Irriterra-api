@@ -2,48 +2,53 @@
 
 namespace App\Models\Inventario;
 
+use App\Models\Compras\CompraDetalle;
+use App\Models\Transferencias\TransferenciaInventarioDetalle;
+use App\Models\Ventas\VentaDetalle;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use App\Models\Transferencias\TransferenciaInventarioDetalle;
-use App\Models\Ventas\VentaDetalle;
-use App\Models\Compras\CompraDetalle;
-
 
 class ProductoVariante extends Model
 {
     use HasFactory;
 
-    /**
-     * Nombre de la tabla.
-     */
-    protected $table = 'producto_variante';
+    public const SIN_CONTROL =
+        'SIN_CONTROL';
 
-    /**
-     * Clave primaria.
-     */
-    protected $primaryKey = 'id_producto_variante';
+    public const CANTIDAD =
+        'CANTIDAD';
 
-    /**
-     * Tipo de clave.
-     */
-    protected $keyType = 'int';
+    public const SERIALIZADO =
+        'SERIALIZADO';
 
-    /**
-     * Clave incremental.
-     */
-    public $incrementing = true;
+    public const TIPOS_CONTROL_INVENTARIO = [
 
-    /**
-     * Campos asignables.
-     */
+        self::SIN_CONTROL,
+
+        self::CANTIDAD,
+
+        self::SERIALIZADO
+
+    ];
+
+    protected $table =
+        'producto_variante';
+
+    protected $primaryKey =
+        'id_producto_variante';
+
+    protected $keyType =
+        'int';
+
+    public $incrementing =
+        true;
+
     protected $fillable = [
 
         'id_producto',
-
-        'id_marca',
 
         'id_marca',
 
@@ -54,6 +59,8 @@ class ProductoVariante extends Model
         'codigo_comercial',
 
         'unidad_medida',
+
+        'tipo_control_inventario',
 
         'descripcion',
 
@@ -67,32 +74,25 @@ class ProductoVariante extends Model
 
     ];
 
-    /**
-     * Conversión de atributos.
-     */
     protected $casts = [
 
-        'id_producto_variante' => 'integer',
+        'id_producto_variante' =>
+            'integer',
 
-        'id_producto' => 'integer',
+        'id_producto' =>
+            'integer',
 
-        'id_marca' => 'integer',
+        'id_marca' =>
+            'integer',
 
-        'usuario_creacion' => 'integer',
+        'usuario_creacion' =>
+            'integer',
 
-        'usuario_modificacion' => 'integer'
+        'usuario_modificacion' =>
+            'integer'
 
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relaciones
-    |--------------------------------------------------------------------------
-    */
-
-    /**
-     * Producto al que pertenece la variante.
-     */
     public function producto(): BelongsTo
     {
         return $this->belongsTo(
@@ -106,12 +106,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Marca de la variante.
-     */
-    /**
-     * Marca de la variante.
-     */
     public function marca(): BelongsTo
     {
         return $this->belongsTo(
@@ -125,9 +119,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Existencias de la variante por sucursal.
-     */
     public function stocks(): HasMany
     {
         return $this->hasMany(
@@ -141,9 +132,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Configuración actual de precios.
-     */
     public function precio(): HasOne
     {
         return $this->hasOne(
@@ -157,9 +145,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Detalles de transferencia asociados a la variante.
-     */
     public function transferenciaDetalles(): HasMany
     {
         return $this->hasMany(
@@ -173,9 +158,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Detalles de venta asociados a la variante.
-     */
     public function ventaDetalles(): HasMany
     {
         return $this->hasMany(
@@ -189,9 +171,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Detalles de compra asociados.
-     */
     public function compraDetalles(): HasMany
     {
         return $this->hasMany(
@@ -205,9 +184,6 @@ class ProductoVariante extends Model
         );
     }
 
-    /**
-     * Imágenes específicas de la variante.
-     */
     public function imagenes(): HasMany
     {
         return $this->hasMany(
@@ -229,5 +205,18 @@ class ProductoVariante extends Model
             ->orderBy(
                 'orden'
             );
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(
+
+            InventarioItem::class,
+
+            'id_producto_variante',
+
+            'id_producto_variante'
+
+        );
     }
 }

@@ -8,26 +8,8 @@ use Illuminate\Validation\Rule;
 
 class UpdateProductoVarianteRequest extends BaseRequest
 {
-    /**
-     * Reglas para actualizar una variante.
-     */
     public function rules(): array
     {
-        $productoVariante =
-            $this->route(
-                'productoVariante'
-            );
-
-
-        $idProductoVariante =
-            $productoVariante instanceof ProductoVariante
-
-                ? $productoVariante
-                ->id_producto_variante
-
-                : $productoVariante;
-
-
         return [
 
             'id_producto' => [
@@ -49,7 +31,6 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'id_marca' => [
 
                 'sometimes',
@@ -69,7 +50,6 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'nombre' => [
 
                 'sometimes',
@@ -82,28 +62,17 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
-
+            /*
+             * El SKU es inmutable.
+             *
+             * Por compatibilidad con el frontend
+             * actual simplemente se excluye.
+             */
             'sku' => [
 
-                'sometimes',
-
-                'required',
-
-                'string',
-
-                'max:100',
-
-                Rule::unique(
-                    'producto_variante',
-                    'sku'
-                )
-                    ->ignore(
-                        $idProductoVariante,
-                        'id_producto_variante'
-                    )
+                'exclude'
 
             ],
-
 
             'codigo_comercial' => [
 
@@ -117,7 +86,6 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'unidad_medida' => [
 
                 'sometimes',
@@ -130,6 +98,20 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
+            'tipo_control_inventario' => [
+
+                'sometimes',
+
+                'required',
+
+                'string',
+
+                Rule::in(
+                    ProductoVariante::
+                    TIPOS_CONTROL_INVENTARIO
+                )
+
+            ],
 
             'descripcion' => [
 
@@ -141,7 +123,6 @@ class UpdateProductoVarianteRequest extends BaseRequest
 
             ],
 
-
             'observaciones' => [
 
                 'sometimes',
@@ -151,7 +132,6 @@ class UpdateProductoVarianteRequest extends BaseRequest
                 'string'
 
             ],
-
 
             'usuario_modificacion' => [
 

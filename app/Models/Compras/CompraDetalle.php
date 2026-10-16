@@ -5,6 +5,8 @@ namespace App\Models\Compras;
 use App\Models\Inventario\ProductoVariante;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Inventario\InventarioItem;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CompraDetalle extends Model
 {
@@ -36,6 +38,12 @@ class CompraDetalle extends Model
         'descuento',
 
         'subtotal',
+
+        'costo_unitario_original',
+
+        'descuento_original',
+
+        'subtotal_original',
 
         'observaciones',
 
@@ -71,6 +79,15 @@ class CompraDetalle extends Model
             'decimal:2',
 
         'subtotal' =>
+            'decimal:2',
+
+        'costo_unitario_original' =>
+            'decimal:2',
+
+        'descuento_original' =>
+            'decimal:2',
+
+        'subtotal_original' =>
             'decimal:2',
 
         'usuario_creacion' =>
@@ -115,6 +132,23 @@ class CompraDetalle extends Model
             'id_producto_variante',
 
             'id_producto_variante'
+
+        );
+    }
+
+    /**
+     * Unidades serializadas originadas
+     * mediante este detalle de compra.
+     */
+    public function itemsOrigen(): HasMany
+    {
+        return $this->hasMany(
+
+            InventarioItem::class,
+
+            'id_compra_detalle_origen',
+
+            'id_compra_detalle'
 
         );
     }
